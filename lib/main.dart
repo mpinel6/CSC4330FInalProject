@@ -1,4 +1,3 @@
-//julia
 import 'package:flutter/material.dart';
 
 void main() {
@@ -131,8 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
 
-
-
+// Hunter Todd wuz here
 
 
 
@@ -146,3 +144,4 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
 // Steven Reed
+//Jacob Rodrigue
