@@ -131,7 +131,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
 
-<<<<<<< HEAD
 
 // Hunter Todd wuz here
 
@@ -147,6 +146,4 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
 // Steven Reed
-=======
 //Jacob Rodrigue
->>>>>>> e2d8ed68870c4e7f62703a269d7783c33201d896
