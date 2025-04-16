@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 //hunter todd
+//kollin bassie
+//rules still need work
 class RulesPage extends StatelessWidget {
   const RulesPage({super.key});
 
