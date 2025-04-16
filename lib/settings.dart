@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({Key? key}) : super(key: key);
 
   @override
   _SettingsPageState createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  // Example state variable
   bool _notificationsEnabled = true;
+  double _volume = 0.5; // Placeholder volume value
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,36 @@ class _SettingsPageState extends State<SettingsPage> {
                 });
               },
             ),
-            // Add more settings widgets here
+            const SizedBox(height: 20),
+            // Volume Slider
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Adjust Volume',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Slider(
+                  value: _volume,
+                  onChanged: (double value) {
+                    setState(() {
+                      _volume = value;
+                    });
+                  },
+                  min: 0.0,
+                  max: 1.0,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Pause Button
+            ElevatedButton.icon(
+              onPressed: () {
+                // Placeholder: No functionality yet
+              },
+              icon: const Icon(Icons.pause),
+              label: const Text('Pause'),
+            ),
           ],
         ),
       ),
