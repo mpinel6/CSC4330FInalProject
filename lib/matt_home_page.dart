@@ -97,21 +97,21 @@ const SizedBox(height: 30),
     ),
     child: const Text(
       'Play LAN',
-      style: TextStyle(fontSize: 18),
+  
     ),
   ),
   const SizedBox(height: 20),
   ElevatedButton(
     onPressed: () {
-      // Handle Play AI action
+      
     },
     style: ElevatedButton.styleFrom(
       backgroundColor: const Color(0xFF461D7C),
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+      
     ),
     child: const Text(
       'Play AI',
-      style: TextStyle(fontSize: 18),
+     
     ),
   ),
 ],
