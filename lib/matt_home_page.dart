@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'rules_page.dart';
 import 'settings.dart';
+import 'lanhome.dart';
+import 'mattgamecoding.dart';
 
 class matthomepage extends StatelessWidget {
   const matthomepage({super.key});
@@ -97,7 +99,10 @@ class _MyHomePageState extends State<MyHomePage> {
               const SizedBox(height: 60),
               ElevatedButton(
                 onPressed: () {
-                  // Handle Play LAN action
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const lanhome()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.brown[700],
@@ -127,6 +132,27 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 child: const Text(
                   'Play AI',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const mattgamecoding()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.brown[700],
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 6,
+                ),
+                child: const Text(
+                  'QuickStartTest',
                   style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
