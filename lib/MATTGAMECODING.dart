@@ -35,13 +35,15 @@ class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
   bool _hasDealt = false;
   bool _hasSecondPlayer = false;
+  bool _isPlayer1Turn = true; // Track whose turn it is
   List<Map<String, dynamic>> _selectedCards = [];
   List<Map<String, dynamic>> _player2Cards = [];
   String? _topLeftCard;
   Map<String, bool> _cardSelections = {};
   Map<String, bool> _player2CardSelections = {};
   List<Map<String, dynamic>> _lastPlayedCards = [];
-  int _tokens = 3;
+  int _player1Tokens = 3;
+  int _player2Tokens = 3;
   List<String> _deck = [
     'Ace', 'Ace', 'Ace', 'Ace', 'Ace', 'Ace',
     'King', 'King', 'King', 'King', 'King', 'King',
@@ -105,19 +107,19 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _playSelectedCards() {
     setState(() {
-      // Store the cards that are about to be played from both players
-      _lastPlayedCards = [
-        ..._selectedCards.where((card) => _cardSelections['${card['id']}'] == true),
-        ..._player2Cards.where((card) => _player2CardSelections['${card['id']}'] == true),
-      ];
+      // Only allow playing cards for the current player
+      if (_isPlayer1Turn) {
+        _lastPlayedCards = _selectedCards.where((card) => _cardSelections['${card['id']}'] == true).toList();
+        _selectedCards.removeWhere((card) => _cardSelections['${card['id']}'] == true);
+        _cardSelections.clear();
+      } else {
+        _lastPlayedCards = _player2Cards.where((card) => _player2CardSelections['${card['id']}'] == true).toList();
+        _player2Cards.removeWhere((card) => _player2CardSelections['${card['id']}'] == true);
+        _player2CardSelections.clear();
+      }
       
-      // Remove selected cards from both players' hands
-      _selectedCards.removeWhere((card) => _cardSelections['${card['id']}'] == true);
-      _player2Cards.removeWhere((card) => _player2CardSelections['${card['id']}'] == true);
-      
-      // Clear selections
-      _cardSelections.clear();
-      _player2CardSelections.clear();
+      // Switch turns after playing cards
+      _isPlayer1Turn = !_isPlayer1Turn;
       
       // If no cards left, show message
       if (_selectedCards.isEmpty && _player2Cards.isEmpty) {
@@ -144,20 +146,41 @@ class _MyHomePageState extends State<MyHomePage> {
 
     bool allCardsMatch = _lastPlayedCards.every((card) => card['value'] == _topLeftCard);
     
-    // Only decrement tokens if the LIAR should drink (cards don't match)
-    if (!allCardsMatch) {
-      setState(() {
-        _tokens = _tokens > 0 ? _tokens - 1 : 0;
-      });
-    }
+    // Remove tokens based on accusation outcome and who made the accusation
+    setState(() {
+      if (allCardsMatch) {
+        // If cards match (Accuser Should Drink), remove token from the accusing player
+        if (_isPlayer1Turn) {
+          _player1Tokens = _player1Tokens > 0 ? _player1Tokens - 1 : 0;
+        } else {
+          _player2Tokens = _player2Tokens > 0 ? _player2Tokens - 1 : 0;
+        }
+      } else {
+        // If cards don't match (LIAR SHOULD DRINK), remove token from the other player
+        if (_isPlayer1Turn) {
+          _player2Tokens = _player2Tokens > 0 ? _player2Tokens - 1 : 0;
+        } else {
+          _player1Tokens = _player1Tokens > 0 ? _player1Tokens - 1 : 0;
+        }
+      }
+    });
     
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        String message;
+        if (allCardsMatch) {
+          // If cards match, the accusing player drinks
+          message = _isPlayer1Turn ? 'Player 1 Should Drink!' : 'Player 2 Should Drink!';
+        } else {
+          // If cards don't match, the other player drinks
+          message = _isPlayer1Turn ? 'Player 2 Should Drink!' : 'Player 1 Should Drink!';
+        }
+        
         return AlertDialog(
           backgroundColor: Colors.brown[100],
           title: Text(
-            allCardsMatch ? 'Accuser Should Drink!' : 'LIAR SHOULD DRINK!',
+            message,
             style: TextStyle(
               color: Colors.brown[700],
               fontWeight: FontWeight.bold,
@@ -167,6 +190,10 @@ class _MyHomePageState extends State<MyHomePage> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                // Switch turns after resolving the LIAR check
+                setState(() {
+                  _isPlayer1Turn = !_isPlayer1Turn;
+                });
               },
               child: Text(
                 'OK',
@@ -231,6 +258,23 @@ class _MyHomePageState extends State<MyHomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   if (_hasDealt) ...[
+                    // Turn indicator
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.brown[700],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _isPlayer1Turn ? 'Player 1\'s Turn' : 'Player 2\'s Turn',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,13 +282,53 @@ class _MyHomePageState extends State<MyHomePage> {
                         // Player 1's hand
                         Column(
                           children: [
-                            const Text(
-                              'Player 1 Hand:',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.brown,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Player 1 Hand:',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.brown,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.brown.withOpacity(0.3),
+                                        spreadRadius: 2,
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.stars,
+                                        color: Colors.brown,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '$_player1Tokens',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.brown,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 10),
                             ..._selectedCards.map((card) => Padding(
@@ -254,11 +338,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                 children: [
                                   Checkbox(
                                     value: _cardSelections['${card['id']}'] ?? false,
-                                    onChanged: (bool? value) {
+                                    onChanged: _isPlayer1Turn ? (bool? value) {
                                       setState(() {
                                         _cardSelections['${card['id']}'] = value ?? false;
                                       });
-                                    },
+                                    } : null,
                                     activeColor: Colors.brown[700],
                                   ),
                                   Text(
@@ -277,13 +361,53 @@ class _MyHomePageState extends State<MyHomePage> {
                           // Player 2's hand
                           Column(
                             children: [
-                              const Text(
-                                'Player 2 Hand:',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.brown,
-                                ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    'Player 2 Hand:',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.brown,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.brown.withOpacity(0.3),
+                                          spreadRadius: 2,
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.stars,
+                                          color: Colors.brown,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '$_player2Tokens',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.brown,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 10),
                               ..._player2Cards.map((card) => Padding(
@@ -293,11 +417,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                   children: [
                                     Checkbox(
                                       value: _player2CardSelections['${card['id']}'] ?? false,
-                                      onChanged: (bool? value) {
+                                      onChanged: !_isPlayer1Turn ? (bool? value) {
                                         setState(() {
                                           _player2CardSelections['${card['id']}'] = value ?? false;
                                         });
-                                      },
+                                      } : null,
                                       activeColor: Colors.brown[700],
                                     ),
                                     Text(
@@ -446,7 +570,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '$_tokens',
+                    '$_player1Tokens',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
