@@ -1,49 +1,27 @@
 import 'package:flutter/material.dart';
-
+import 'rules_page.dart';
+import 'settings.dart';
 
 class matthomepage extends StatelessWidget {
   const matthomepage({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Liars Bar IRL',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
         useMaterial3: true,
+        fontFamily: 'Roboto',
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Liars Bar IRL'),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -53,119 +31,129 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  int _selectedIndex = 0;
 
   void _incrementCounter() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
       _counter++;
     });
   }
 
-  //Ian Waskom
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    
+    if (index == 1) { // Rules button index
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const RulesPage()),
+      );
+    } else if (index == 2) { // Settings button index
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const SettingsPage()),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
- 
     return Scaffold(
+      backgroundColor: Colors.brown[100],
       appBar: AppBar(
-
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        
-        title: Text(widget.title),
+        backgroundColor: Colors.brown[700],
+        elevation: 4,
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        centerTitle: true,
       ),
       body: Center(
-     
-        child: Column(
-
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'Welcome to Liars Bar IRL:',
-            ),
-const SizedBox(height: 30),
-  ElevatedButton(
-    onPressed: () {
-      // Handle Play LAN action
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF461D7C),
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-    ),
-    child: const Text(
-      'Play LAN',
-  
-    ),
-  ),
-  const SizedBox(height: 20),
-  ElevatedButton(
-    onPressed: () {
-      
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF461D7C),
-      
-    ),
-    child: const Text(
-      'Play AI',
-     
-    ),
-  ),
-],
-
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              const Text(
+                'Welcome to',
+                style: TextStyle(fontSize: 20, color: Colors.brown),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Liars Bar IRL',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.brown[700],
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 60),
+              ElevatedButton(
+                onPressed: () {
+                  // Handle Play LAN action
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.brown[700],
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 6,
+                ),
+                child: const Text(
+                  'Play LAN',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  // Handle Play AI action
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.brown[700],
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 6,
+                ),
+                child: const Text(
+                  'Play AI',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
- 
-      // This trailing comma makes auto-formatting nicer for build methods.
-       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF461D7C),
-        unselectedItemColor: Colors.grey,
+      bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.games),
-            label: 'MAIN MENU',
+            icon: Icon(Icons.home),
+            label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'RULES',
+            icon: Icon(Icons.book),
+            label: 'Rules',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.assignment),
-            label: 'SETTINGS',
+            icon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.brown[700],
+        backgroundColor: Colors.brown[200],
+        onTap: _onItemTapped,
       ),
     );
   }
 }
-
-
-
-
-
-
-
-// Hunter Todd wuz here
-
-
-
-
-// Matthew Balachowski 
-// Matthew Balachowski pt 2
-//Samuel A. Bustamante
-
-
-
-
-
-
-//Maycie Pinell
-// Steven Reed
-//Jacob Rodrigue
-//julia
-//Kollin
-//Christian
