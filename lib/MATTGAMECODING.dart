@@ -44,6 +44,10 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Map<String, dynamic>> _lastPlayedCards = [];
   int _player1Tokens = 3;
   int _player2Tokens = 3;
+  int _player1LuckyNumber = 0;
+  int _player2LuckyNumber = 0;
+  List<int> _player1UsedNumbers = [];
+  List<int> _player2UsedNumbers = [];
   List<String> _deck = [
     'Ace', 'Ace', 'Ace', 'Ace', 'Ace', 'Ace',
     'King', 'King', 'King', 'King', 'King', 'King',
@@ -66,6 +70,13 @@ class _MyHomePageState extends State<MyHomePage> {
       final random = Random();
       _deck.shuffle(random);
       setState(() {
+        // Reset used numbers when dealing new cards
+        _player1UsedNumbers = [];
+        _player2UsedNumbers = [];
+        // Generate lucky numbers when dealing cards
+        _player1LuckyNumber = random.nextInt(6) + 1;
+        _player2LuckyNumber = random.nextInt(6) + 1;
+        
         // Deal cards to first player
         _selectedCards = _deck.take(5).toList().asMap().entries.map((entry) {
           return {
@@ -78,19 +89,17 @@ class _MyHomePageState extends State<MyHomePage> {
         if (_hasSecondPlayer) {
           _player2Cards = _deck.skip(5).take(5).toList().asMap().entries.map((entry) {
             return {
-              'id': entry.key + 5, // Offset IDs for second player
+              'id': entry.key + 5,
               'value': entry.value,
             };
           }).toList();
-          _deck.removeRange(0, 10); // Remove both players' cards
+          _deck.removeRange(0, 10);
         } else {
-          _deck.removeRange(0, 5); // Remove only first player's cards
+          _deck.removeRange(0, 5);
         }
         
         _hasDealt = true;
-        // Select a random card for the top left
         _topLeftCard = _topCards[random.nextInt(_topCards.length)];
-        // Initialize card selections for both players
         _cardSelections = {for (var card in _selectedCards) '${card['id']}': false};
         _player2CardSelections = {for (var card in _player2Cards) '${card['id']}': false};
       });
@@ -121,13 +130,102 @@ class _MyHomePageState extends State<MyHomePage> {
       // Switch turns after playing cards
       _isPlayer1Turn = !_isPlayer1Turn;
       
-      // If no cards left, show message
-      if (_selectedCards.isEmpty && _player2Cards.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No cards left in hand!'),
-            backgroundColor: Colors.brown,
-          ),
+      // Check if either player has run out of cards
+      if (_selectedCards.isEmpty || _player2Cards.isEmpty) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: Colors.brown[100],
+              contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+              actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              title: const Center(
+                child: Text(
+                  'Game Complete!',
+                  style: TextStyle(
+                    color: Colors.brown,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+              content: Center(
+                child: Text(
+                  _selectedCards.isEmpty ? 'Player 1 has won!' : 'Player 2 has won!',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.brown,
+                  ),
+                ),
+              ),
+              actionsAlignment: MainAxisAlignment.center,
+              actions: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const matthomepage()),
+                        );
+                      },
+                      child: const Text(
+                        'Go Home',
+                        style: TextStyle(
+                          color: Colors.brown,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        setState(() {
+                          // Reset game state
+                          _hasDealt = false;
+                          _hasSecondPlayer = false;
+                          _isPlayer1Turn = true;
+                          _selectedCards = [];
+                          _player2Cards = [];
+                          _topLeftCard = null;
+                          _cardSelections = {};
+                          _player2CardSelections = {};
+                          _lastPlayedCards = [];
+                          _player1Tokens = 3;
+                          _player2Tokens = 3;
+                          _player1UsedNumbers = [];
+                          _player2UsedNumbers = [];
+                          _deck = [
+                            'Ace', 'Ace', 'Ace', 'Ace', 'Ace', 'Ace',
+                            'King', 'King', 'King', 'King', 'King', 'King',
+                            'Queen', 'Queen', 'Queen', 'Queen', 'Queen', 'Queen',
+                            'Joker', 'Joker'
+                          ];
+                        });
+                      },
+                      child: const Text(
+                        'Play Again',
+                        style: TextStyle(
+                          color: Colors.brown,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
         );
       }
     });
@@ -144,7 +242,10 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
 
-    bool allCardsMatch = _lastPlayedCards.every((card) => card['value'] == _topLeftCard);
+    // Check if all cards match the top card, treating Jokers as wild cards
+    bool allCardsMatch = _lastPlayedCards.every((card) => 
+      card['value'] == _topLeftCard || card['value'] == 'Joker'
+    );
     
     // Remove tokens based on accusation outcome and who made the accusation
     setState(() {
@@ -164,6 +265,221 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
     });
+
+    // Function to show Test Your Luck dialog
+    void showTestYourLuck(bool isPlayer1) {
+      double sliderValue = 1;
+      bool hasRolled = false;
+      final random = Random();
+
+      // Get available numbers (numbers not yet used) for the specific player
+      List<int> availableNumbers = List.generate(6, (index) => index + 1)
+          .where((num) => !(isPlayer1 ? _player1UsedNumbers : _player2UsedNumbers).contains(num))
+          .toList();
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                backgroundColor: Colors.brown[100],
+                contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                title: const Center(
+                  child: Text(
+                    'Test Your Luck!',
+                    style: TextStyle(
+                      color: Colors.brown,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isPlayer1 ? 'Player 1, test your luck!' : 'Player 2, test your luck!',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.brown,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Slider(
+                      value: sliderValue,
+                      min: 1,
+                      max: 6,
+                      divisions: 5,
+                      label: sliderValue.round().toString(),
+                      onChanged: hasRolled ? null : (value) {
+                        setDialogState(() {
+                          sliderValue = value;
+                        });
+                      },
+                      activeColor: Colors.brown[700],
+                    ),
+                    Text(
+                      '${sliderValue.round()}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.brown,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Lucky Number: ${isPlayer1 ? _player1LuckyNumber : _player2LuckyNumber}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.brown,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if ((isPlayer1 ? _player1UsedNumbers : _player2UsedNumbers).isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        'Used Numbers: ${(isPlayer1 ? _player1UsedNumbers : _player2UsedNumbers).join(", ")}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.brown,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                actions: [
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: hasRolled ? null : () {
+                        setDialogState(() {
+                          // Only roll from available numbers
+                          if (availableNumbers.isNotEmpty) {
+                            int randomIndex = random.nextInt(availableNumbers.length);
+                            sliderValue = availableNumbers[randomIndex].toDouble();
+                            // Add the rolled number to used numbers for the specific player
+                            if (isPlayer1) {
+                              _player1UsedNumbers.add(sliderValue.round());
+                            } else {
+                              _player2UsedNumbers.add(sliderValue.round());
+                            }
+                          }
+                          hasRolled = true;
+                          
+                          // Check if the rolled number matches the player's lucky number
+                          if (sliderValue.round() == (isPlayer1 ? _player1LuckyNumber : _player2LuckyNumber)) {
+                            setState(() {
+                              if (isPlayer1) {
+                                _player1Tokens = _player1Tokens > 0 ? _player1Tokens - 1 : 0;
+                              } else {
+                                _player2Tokens = _player2Tokens > 0 ? _player2Tokens - 1 : 0;
+                              }
+                            });
+                            
+                            // Show losing message
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  backgroundColor: Colors.brown[100],
+                                  title: const Text(
+                                    'Bad Luck!',
+                                    style: TextStyle(
+                                      color: Colors.brown,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  content: Text(
+                                    isPlayer1 ? 'Player 1 loses a token!' : 'Player 2 loses a token!',
+                                    style: const TextStyle(
+                                      color: Colors.brown,
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop(); // Close the Bad Luck dialog
+                                        Navigator.of(context).pop(); // Close the Test Your Luck dialog
+                                        setState(() {
+                                          // Reset game state
+                                          _hasDealt = false;
+                                          _hasSecondPlayer = false;
+                                          _isPlayer1Turn = true;
+                                          _selectedCards = [];
+                                          _player2Cards = [];
+                                          _topLeftCard = null;
+                                          _cardSelections = {};
+                                          _player2CardSelections = {};
+                                          _lastPlayedCards = [];
+                                          _player1Tokens = 3;
+                                          _player2Tokens = 3;
+                                          _player1UsedNumbers = [];
+                                          _player2UsedNumbers = [];
+                                          _deck = [
+                                            'Ace', 'Ace', 'Ace', 'Ace', 'Ace', 'Ace',
+                                            'King', 'King', 'King', 'King', 'King', 'King',
+                                            'Queen', 'Queen', 'Queen', 'Queen', 'Queen', 'Queen',
+                                            'Joker', 'Joker'
+                                          ];
+                                        });
+                                      },
+                                      child: const Text(
+                                        'Restart Game',
+                                        style: TextStyle(
+                                          color: Colors.brown,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.brown[700],
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                      ),
+                      child: Text(
+                        hasRolled ? 'Rolled!' : 'Roll!',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text(
+                        'Close',
+                        style: TextStyle(
+                          color: Colors.brown,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    }
     
     showDialog(
       context: context,
@@ -190,15 +506,17 @@ class _MyHomePageState extends State<MyHomePage> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // Switch turns after resolving the LIAR check
-                setState(() {
-                  _isPlayer1Turn = !_isPlayer1Turn;
-                });
+                // Show Test Your Luck for the player who should drink
+                if (allCardsMatch) {
+                  showTestYourLuck(_isPlayer1Turn);
+                } else {
+                  showTestYourLuck(!_isPlayer1Turn);
+                }
               },
-              child: Text(
-                'OK',
+              child: const Text(
+                'Test Your Luck',
                 style: TextStyle(
-                  color: Colors.brown[700],
+                  color: Colors.brown,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -443,7 +761,16 @@ class _MyHomePageState extends State<MyHomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ElevatedButton(
-                          onPressed: _playSelectedCards,
+                          onPressed: () {
+                            // Check if any cards are selected for the current player
+                            bool hasSelectedCards = _isPlayer1Turn
+                                ? _cardSelections.values.any((selected) => selected)
+                                : _player2CardSelections.values.any((selected) => selected);
+                            
+                            if (hasSelectedCards) {
+                              _playSelectedCards();
+                            }
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.brown[700],
                             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
@@ -452,9 +779,15 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                             elevation: 6,
                           ),
-                          child: const Text(
-                            'Play Card(s)',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          child: Text(
+                            _isPlayer1Turn
+                                ? (_cardSelections.values.any((selected) => selected)
+                                    ? 'Play Card(s)'
+                                    : 'Select Cards to Play')
+                                : (_player2CardSelections.values.any((selected) => selected)
+                                    ? 'Play Card(s)'
+                                    : 'Select Cards to Play'),
+                            style: const TextStyle(fontSize: 18, color: Colors.white),
                           ),
                         ),
                         const SizedBox(width: 20),
