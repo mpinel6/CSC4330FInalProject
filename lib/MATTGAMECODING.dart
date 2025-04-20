@@ -36,6 +36,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _hasDealt = false;
   bool _hasSecondPlayer = false;
   bool _isPlayer1Turn = true; // Track whose turn it is
+  bool _hasPressedLiar = false; // Track if liar button has been pressed this turn
   List<Map<String, dynamic>> _selectedCards = [];
   List<Map<String, dynamic>> _player2Cards = [];
   String? _topLeftCard;
@@ -129,6 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
       
       // Switch turns after playing cards
       _isPlayer1Turn = !_isPlayer1Turn;
+      _hasPressedLiar = false; // Reset liar button state for new turn
       
       // Check if either player has run out of cards
       if (_selectedCards.isEmpty || _player2Cards.isEmpty) {
@@ -241,6 +243,10 @@ class _MyHomePageState extends State<MyHomePage> {
       );
       return;
     }
+
+    setState(() {
+      _hasPressedLiar = true; // Mark that liar button has been pressed
+    });
 
     // Check if all cards match the top card, treating Jokers as wild cards
     bool allCardsMatch = _lastPlayedCards.every((card) => 
@@ -792,18 +798,19 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         const SizedBox(width: 20),
                         ElevatedButton(
-                          onPressed: _checkLiar,
+                          onPressed: _hasPressedLiar ? null : _checkLiar,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[700],
+                            backgroundColor: _hasPressedLiar ? Colors.grey : Colors.red[700],
                             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 6,
                           ),
-                          child: const Text(
-                            'LIAR!',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          child: Text(
+                            _isPlayer1Turn && _lastPlayedCards.isEmpty ? 'No Cards Placed' :
+                            _hasPressedLiar ? 'LIAR (Used)' : 'LIAR!',
+                            style: const TextStyle(fontSize: 18, color: Colors.white),
                           ),
                         ),
                       ],
