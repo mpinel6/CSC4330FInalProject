@@ -30,26 +30,7 @@ class LandscapeRulesLayout extends StatelessWidget {
         Container(
           width: MediaQuery.of(context).size.width * 0.25,
           color: Colors.brown[200],
-          child: ListView(
-            padding: const EdgeInsets.all(12.0),
-            children: [
-              const RulesSectionButton(title: "Overview", index: 0),
-              const SizedBox(height: 8),
-              const RulesSectionButton(title: "Setup", index: 1),
-              const SizedBox(height: 8),
-              const RulesSectionButton(title: "Gameplay", index: 2),
-              const SizedBox(height: 8),
-              const RulesSectionButton(title: "Scoring", index: 3),
-              const SizedBox(height: 8),
-              const RulesSectionButton(title: "Special Rules", index: 4),
-              const SizedBox(height: 24),
-              Image.asset(
-                'assets/liars_bar_logo.png', 
-                errorBuilder: (context, error, stackTrace) => 
-                  const Icon(Icons.sports_bar, size: 80, color: Colors.brown),
-              ),
-            ],
-          ),
+          child: const RulesNavigation(),
         ),
         // Main content area
         Expanded(
@@ -63,14 +44,68 @@ class LandscapeRulesLayout extends StatelessWidget {
   }
 }
 
+class RulesNavigation extends StatelessWidget {
+  const RulesNavigation({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // We need to access the RulesContent's scrolling method
+    final RulesContentState? rulesContentState = 
+        context.findAncestorStateOfType<RulesContentState>();
+        
+    return ListView(
+      padding: const EdgeInsets.all(12.0),
+      children: [
+        RulesSectionButton(
+          title: "Overview", 
+          index: 0,
+          onPressed: () => rulesContentState?.scrollToSection(0),
+        ),
+        const SizedBox(height: 8),
+        RulesSectionButton(
+          title: "Setup", 
+          index: 1,
+          onPressed: () => rulesContentState?.scrollToSection(1),
+        ),
+        const SizedBox(height: 8),
+        RulesSectionButton(
+          title: "Gameplay", 
+          index: 2,
+          onPressed: () => rulesContentState?.scrollToSection(2),
+        ),
+        const SizedBox(height: 8),
+        RulesSectionButton(
+          title: "Scoring", 
+          index: 3,
+          onPressed: () => rulesContentState?.scrollToSection(3),
+        ),
+        const SizedBox(height: 8),
+        RulesSectionButton(
+          title: "Special Rules", 
+          index: 4,
+          onPressed: () => rulesContentState?.scrollToSection(4),
+        ),
+        const SizedBox(height: 24),
+        Image.asset(
+          'assets/liars_bar_logo.png', 
+          errorBuilder: (context, error, stackTrace) => 
+            const Icon(Icons.sports_bar, size: 80, color: Colors.brown),
+        ),
+      ],
+    );
+  }
+}
+
 class RulesSectionButton extends StatelessWidget {
   final String title;
   final int index;
+  final VoidCallback? onPressed;
 
   const RulesSectionButton({
     super.key,
     required this.title,
     required this.index,
+    this.onPressed,
   });
 
   @override
@@ -84,10 +119,7 @@ class RulesSectionButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(8.0),
         ),
       ),
-      onPressed: () {
-        // Scroll to appropriate section - would implement with a ScrollController
-        // in a real implementation
-      },
+      onPressed: onPressed,
       child: Text(
         title,
         style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
@@ -96,14 +128,43 @@ class RulesSectionButton extends StatelessWidget {
   }
 }
 
-class RulesContent extends StatelessWidget {
+class RulesContent extends StatefulWidget {
   const RulesContent({super.key});
+  
+  @override
+  State<RulesContent> createState() => RulesContentState();
+}
+
+class RulesContentState extends State<RulesContent> {
+  final ScrollController _scrollController = ScrollController();
+  final List<GlobalKey> _sectionKeys = List.generate(5, (_) => GlobalKey());
+  
+  void scrollToSection(int index) {
+    if (index < _sectionKeys.length) {
+      final context = _sectionKeys[index].currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return ListView(
+      controller: _scrollController,
       children: [
         RulesSection(
+          key: _sectionKeys[0],
           title: "Game Overview",
           content: "Welcome to Liar's Bar, where deception is on tap and the truth is optional! "
               "In this game of bluff and strategy, players take on the role of patrons at a shady establishment "
@@ -113,6 +174,7 @@ class RulesContent extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         RulesSection(
+          key: _sectionKeys[1],
           title: "Setup",
           content: "• Each player starts with 10 tokens\n"
               "• Shuffle the deck of special Liar's Bar cards\n"
@@ -123,6 +185,7 @@ class RulesContent extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         RulesSection(
+          key: _sectionKeys[2],
           title: "Gameplay",
           content: "On your turn:\n\n"
               "1. Draw a card from the deck\n"
@@ -137,6 +200,7 @@ class RulesContent extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         RulesSection(
+          key: _sectionKeys[3],
           title: "Scoring",
           content: "• Last player with tokens wins the game\n"
               "• If you lose all tokens, you're out\n"
@@ -148,6 +212,7 @@ class RulesContent extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         RulesSection(
+          key: _sectionKeys[4],
           title: "Special Rules",
           content: "• Wild Cards: Jokers can be played as any card\n"
               "• Last Call: When the deck is depleted, enter 'Last Call' mode where each player gets one final turn\n"
