@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 //hunter todd
 //kollin bassie
-//rules still need work
+
 class RulesPage extends StatelessWidget {
   const RulesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Force landscape orientation
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Liar's Bar Rules"),
+        title: const Text("Joker's Joint Rules"),
         backgroundColor: Colors.brown[700],
       ),
       backgroundColor: Colors.brown[100],
@@ -87,9 +86,9 @@ class RulesNavigation extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Image.asset(
-          'assets/liars_bar_logo.png', 
+          'assets/jokers_joint_logo.png', 
           errorBuilder: (context, error, stackTrace) => 
-            const Icon(Icons.sports_bar, size: 80, color: Colors.brown),
+            const Icon(Icons.casino, size: 80, color: Colors.brown),
         ),
       ],
     );
@@ -195,59 +194,58 @@ class RulesContentState extends State<RulesContent> {
             RulesSection(
               key: _sectionKeys[0],
               title: "Game Overview",
-              content: "Welcome to Liar's Bar, where deception is on tap and the truth is optional! "
-                  "In this game of bluff and strategy, players take on the role of patrons at a shady establishment "
-                  "trying to outmaneuver each other through crafty deception and keen observation.\n\n"
-                  "The objective is to be the last player with tokens by making successful bluffs "
-                  "about the cards in your hand or by correctly challenging other players' claims.",
+              content: "Welcome to Joker's Joint, where bluffing is an art and deception pays! "
+                  "In this retro-styled game of strategy and deceit, players take on the role of card sharks "
+                  "trying to outwit each other through masterful bluffing and keen observation.\n\n"
+                  "The objective is to be the last player standing by protecting your lives while "
+                  "successfully calling out other players' bluffs or making convincing bluffs of your own.",
             ),
             const SizedBox(height: 24),
             RulesSection(
               key: _sectionKeys[1],
               title: "Setup",
-              content: "• Each player starts with 10 tokens\n"
-                  "• Shuffle the deck of special Liar's Bar cards\n"
-                  "• Deal 3 cards to each player\n"
-                  "• Place the remaining deck face down in the center\n"
-                  "• The player who most recently told a lie goes first\n"
-                  "• Set up drinks (optional but recommended)",
+              content: "• Use a special deck of just 20 cards consisting of:\n"
+                  "   - 6 Aces\n"
+                  "   - 6 Kings\n"
+                  "   - 6 Queens\n"
+                  "   - 2 Jokers\n\n"
+                  "• The game is designed for 4 players\n"
+                  "• Each player starts with 3 lives\n"
+                  "• Deal 5 cards to each player\n"
+                  "• Choose a starting player randomly",
             ),
             const SizedBox(height: 24),
             RulesSection(
               key: _sectionKeys[2],
               title: "Gameplay",
               content: "On your turn:\n\n"
-                  "1. Draw a card from the deck\n"
-                  "2. Make a claim about your hand by placing 1-3 cards face down and declaring what they are\n"
+                  "1. Make a claim about one or more cards from your hand\n"
+                  "2. Place these cards face down in the center\n"
                   "3. Other players can either:\n"
-                  "   • Call your bluff: If you were lying, you drink and lose a token. If you were truthful, they drink and lose a token\n"
+                  "   • Call your bluff: If you were lying, you lose a life. If you were telling the truth, the challenger loses a life\n"
                   "   • Pass and let play continue to the next player\n\n"
                   "4. If no one calls your bluff, add your played cards to the discard pile without revealing them\n"
-                  "5. Play continues clockwise\n\n"
-                  "Remember: You must always declare your cards as the same card type (e.g., \"Three Queens\"), "
-                  "but the number of cards you actually place down can vary from 1-3.",
+                  "5. Draw replacement cards if available\n"
+                  "6. Play continues clockwise\n\n"
+                  "The game consists of 3 rounds. If multiple players still have lives at the end of the third round, reshuffle the deck and continue until only one player remains.",
             ),
             const SizedBox(height: 24),
             RulesSection(
               key: _sectionKeys[3],
-              title: "Scoring",
-              content: "• Last player with tokens wins the game\n"
-                  "• If you lose all tokens, you're out\n"
-                  "• Optional house rule: Players who are eliminated must finish their drink\n"
-                  "• Special achievements:\n"
-                  "   - The Honest Barkeep: Win without ever being caught in a lie\n"
-                  "   - The Perfect Read: Correctly call bluffs 3 times in a row\n"
-                  "   - The Great Deceiver: Successfully bluff 5 times in one game",
+              title: "Lives & Elimination",
+              content: "• Each player begins with 3 lives\n"
+                  "• Lose a life when:\n"
+                  "   - You're caught in a lie (placing cards that don't match your claim)\n"
+                  "   - You incorrectly challenge another player's claim\n\n"
+                  "• When you lose all 3 lives, you're eliminated from the game\n"
+                  "• The last player with any lives remaining wins the game\n"
+                  "• If multiple players are still alive after 3 rounds, continue playing until there's a single winner",
             ),
             const SizedBox(height: 24),
             RulesSection(
               key: _sectionKeys[4],
               title: "Special Rules",
-              content: "• Wild Cards: Jokers can be played as any card\n"
-                  "• Last Call: When the deck is depleted, enter 'Last Call' mode where each player gets one final turn\n"
-                  "• Bar Tab: If all players agree, the game loser buys the next round\n"
-                  "• The Bartender's Favor: Once per game, you may peek at the top card of the deck\n"
-                  "• House Special: If you correctly call someone's bluff on a 'House Special' card, they lose 2 tokens instead of 1",
+              content: "• Joker's Rule: Jokers are wild cards and can be played as any card type (Ace, King, or Queen)\n"
             ),
             const SizedBox(height: 32),
             Center(
@@ -256,10 +254,10 @@ class RulesContentState extends State<RulesContent> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.brown[700]!, width: 2),
                   borderRadius: BorderRadius.circular(8),
-                  color: Colors.brown[50],
+                  color: Colors.amber[50],
                 ),
                 child: const Text(
-                  "Remember, in Liar's Bar, the best liars win... most of the time!",
+                  "Remember, at Joker's Joint, it's not whether you win or lose... it's how well you deceive!",
                   style: TextStyle(
                     fontSize: 18,
                     fontStyle: FontStyle.italic,
