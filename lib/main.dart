@@ -17,13 +17,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Liars Bar IRL',
+      title: 'Jokers Joint',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
-      home: const MyHomePage(title: 'Liars Bar IRL'),
+      home: const MyHomePage(title: 'Jokers Joint'),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -95,7 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Liars Bar IRL',
+                'Jokers Joint',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
