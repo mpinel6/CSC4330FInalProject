@@ -10,7 +10,7 @@ class mattgamecoding extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Liars Bar IRL',
+      title: 'Jokers Joint',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
         useMaterial3: true,
