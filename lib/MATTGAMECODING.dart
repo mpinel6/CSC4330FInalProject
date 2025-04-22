@@ -137,6 +137,14 @@ void _dealCards() {
       _isPlayer1Turn = !_isPlayer1Turn;
 // Reset liar button
       _hasPressedLiar = false; 
+      String displayWinner;
+      if(_selectedCards.isEmpty){
+        displayWinner = "Player 1 wins";
+        }else{
+          displayWinner = "Player 2 wins";
+        }
+    
+      
       
       // Check if either player has run out of cards
       if (_selectedCards.isEmpty || _player2Cards.isEmpty) {
@@ -164,7 +172,7 @@ void _dealCards() {
               ),
               content: Center(
                 child: Text(
-                  _selectedCards.isEmpty ? 'Player 1 has won!' : 'Player 2 has won!',
+                  displayWinner,
                   style: const TextStyle(
                     fontSize: 18,
                     color: Colors.brown,
@@ -294,15 +302,30 @@ void _dealCards() {
             msg = "Player 2 TEST YOUR LUCK";
             }
 //STOPED REFACTORING HERE
-    // Function to show Test Your Luck dialog
+  
     void showTestYourLuck(bool isPlayer1) {
       double sliderValue = 1;
       bool hasRolled = false;
       final random = Random();
 
-      // Get available numbers (numbers not yet used) for the specific player
+
+        List<int> rolledNumbers;
+        if(isPlayer1){
+          rolledNumbers = _player1UsedNumbers;
+          }else{
+          rolledNumbers = _player2UsedNumbers;
+          }
+
+               String rolledTxt;
+                  if(hasRolled){
+                      rolledTxt = "Rolled";
+                  }else{
+                      rolledTxt = "Roll";
+                    }
+        
+      //this will be for the numbers that havent alr been rolled 
       List<int> availableNumbers = List.generate(6, (index) => index + 1)
-          .where((num) => !(isPlayer1 ? _player1UsedNumbers : _player2UsedNumbers).contains(num))
+          .where((num) => !rolledNumbers.contains(num))
           .toList();
 
       showDialog(
@@ -329,6 +352,7 @@ void _dealCards() {
                     ),
                   ),
                 ),
+                
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -380,6 +404,7 @@ void _dealCards() {
                     child: ElevatedButton(
                       onPressed: hasRolled ? null : () {
                         setDialogState(() {
+
                           // Only roll from available numbers
                           if (availableNumbers.isNotEmpty) {
                             int randomIndex = random.nextInt(availableNumbers.length);
@@ -391,7 +416,9 @@ void _dealCards() {
                               _player2UsedNumbers.add(sliderValue.round());
                             }
                           }
+
                           hasRolled = true;
+                     
                           
                           // Check if the rolled number matches the player's lucky number
                           if (sliderValue.round() == (isPlayer1 ? _player1LuckyNumber : _player2LuckyNumber)) {
@@ -469,8 +496,9 @@ void _dealCards() {
                         backgroundColor: Colors.brown[700],
                         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                       ),
+                  
                       child: Text(
-                        hasRolled ? 'Rolled!' : 'Roll!',
+                        rolledTxt,
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.white,
@@ -507,11 +535,18 @@ void _dealCards() {
       builder: (BuildContext context) {
         String message;
         if (allCardsMatch) {
-          // If cards match, the accusing player drinks
-          message = _isPlayer1Turn ? 'Player 1 Should Drink!' : 'Player 2 Should Drink!';
+          if(_isPlayer1Turn){
+            message = "Player 1 rolls the die";
+          }else{
+            message = "Player 2 rolls the die";
+          }
+       
         } else {
-          // If cards don't match, the other player drinks
-          message = _isPlayer1Turn ? 'Player 2 Should Drink!' : 'Player 1 Should Drink!';
+                    if(_isPlayer1Turn){
+            message = "Player 2 rolls the die";
+          }else{
+            message = "Player 1 rolls the die";
+          }
         }
         
         return AlertDialog(
@@ -573,6 +608,14 @@ void _dealCards() {
 
   @override
   Widget build(BuildContext context) {
+        String liarbutton;
+    if(_lastPlayedCards.isEmpty&& _isPlayer1Turn){
+      liarbutton = "No Cards Placed";
+    }else if (_hasPressedLiar){
+      liarbutton = "Liar(USED)";
+      }else{
+        liarbutton = "LIAR";
+      }
     return Scaffold(
       backgroundColor: Colors.brown[100],
       appBar: AppBar(
@@ -823,8 +866,7 @@ void _dealCards() {
                             elevation: 6,
                           ),
                           child: Text(
-                            _isPlayer1Turn && _lastPlayedCards.isEmpty ? 'No Cards Placed' :
-                            _hasPressedLiar ? 'LIAR (Used)' : 'LIAR!',
+                            liarbutton,
                             style: const TextStyle(fontSize: 18, color: Colors.white),
                           ),
                         ),
@@ -959,5 +1001,11 @@ void _dealCards() {
         onTap: _onItemTapped,
       ),
     );
+
+    
+
+    
   }
+
 }
+
