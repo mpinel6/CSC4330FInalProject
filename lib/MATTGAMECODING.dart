@@ -35,8 +35,8 @@ class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
   bool _hasDealt = false;
   bool _hasSecondPlayer = false;
-  bool _isPlayer1Turn = true; // Track whose turn it is
-  bool _hasPressedLiar = false; // Track if liar button has been pressed this turn
+  bool _isPlayer1Turn = true;
+  bool _hasPressedLiar = false; 
   List<Map<String, dynamic>> _selectedCards = [];
   List<Map<String, dynamic>> _player2Cards = [];
   String? _topLeftCard;
@@ -65,59 +65,64 @@ class _MyHomePageState extends State<MyHomePage> {
       _hasSecondPlayer = true;
     });
   }
+void _dealCards() {
+  int requiredLength = 5;  //one player 5 cards
+  if (_hasSecondPlayer) {
+    requiredLength = 10; //2 players 10 
+  }
+   if (_deck.length >= requiredLength) {
+    final random = Random(); 
+    _deck.shuffle(random);
+    setState(() {
+      // the rng mechanic for the roulette
+      _player1UsedNumbers = [];
+      _player2UsedNumbers = [];
+      // each player has a random number that is defined at dealing that will be the reason they lose 
+      _player1LuckyNumber = random.nextInt(6) + 1;
+      _player2LuckyNumber = random.nextInt(6) + 1;
 
-  void _dealCards() {
-    if (_deck.length >= (_hasSecondPlayer ? 10 : 5)) {
-      final random = Random();
-      _deck.shuffle(random);
-      setState(() {
-        // Reset used numbers when dealing new cards
-        _player1UsedNumbers = [];
-        _player2UsedNumbers = [];
-        // Generate lucky numbers when dealing cards
-        _player1LuckyNumber = random.nextInt(6) + 1;
-        _player2LuckyNumber = random.nextInt(6) + 1;
-        
-        // Deal cards to first player
-        _selectedCards = _deck.take(5).toList().asMap().entries.map((entry) {
+      // send out cards 
+      _selectedCards = _deck.take(5).toList().asMap().entries.map((entry) {
+        return {
+          'id': entry.key,
+          'value': entry.value,
+        };
+      }).toList();
+
+      // send out cards to second player 
+      if (_hasSecondPlayer) {
+        _player2Cards = _deck.skip(5).take(5).toList().asMap().entries.map((entry) {
           return {
-            'id': entry.key,
+            'id': entry.key + 5,
             'value': entry.value,
           };
         }).toList();
-        
-        // Deal cards to second player if they exist
-        if (_hasSecondPlayer) {
-          _player2Cards = _deck.skip(5).take(5).toList().asMap().entries.map((entry) {
-            return {
-              'id': entry.key + 5,
-              'value': entry.value,
-            };
-          }).toList();
-          _deck.removeRange(0, 10);
-        } else {
-          _deck.removeRange(0, 5);
-        }
-        
-        _hasDealt = true;
-        _topLeftCard = _topCards[random.nextInt(_topCards.length)];
-        _cardSelections = {for (var card in _selectedCards) '${card['id']}': false};
-        _player2CardSelections = {for (var card in _player2Cards) '${card['id']}': false};
-      });
-    } else {
-      // Show a message when there aren't enough cards left
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Not enough cards left in the deck!'),
-          backgroundColor: Colors.brown,
-        ),
-      );
-    }
+        _deck.removeRange(0, 10);
+      } else {
+        _deck.removeRange(0, 5);
+      }
+
+      _hasDealt = true;
+      _topLeftCard = _topCards[random.nextInt(_topCards.length)];
+      _cardSelections = {for (var card in _selectedCards) '${card['id']}': false};
+      _player2CardSelections = {for (var card in _player2Cards) '${card['id']}': false};
+    });
+  } else {
+    // out of cards
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Not enough cards left in the deck!'),
+        backgroundColor: Colors.brown,
+      ),
+    );
   }
+}
+
+ 
 
   void _playSelectedCards() {
     setState(() {
-      // Only allow playing cards for the current player
+      // only persons who turn can play cards 
       if (_isPlayer1Turn) {
         _lastPlayedCards = _selectedCards.where((card) => _cardSelections['${card['id']}'] == true).toList();
         _selectedCards.removeWhere((card) => _cardSelections['${card['id']}'] == true);
@@ -128,9 +133,10 @@ class _MyHomePageState extends State<MyHomePage> {
         _player2CardSelections.clear();
       }
       
-      // Switch turns after playing cards
+      // Switch turns 
       _isPlayer1Turn = !_isPlayer1Turn;
-      _hasPressedLiar = false; // Reset liar button state for new turn
+// Reset liar button
+      _hasPressedLiar = false; 
       
       // Check if either player has run out of cards
       if (_selectedCards.isEmpty || _player2Cards.isEmpty) {
@@ -245,33 +251,49 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     setState(() {
-      _hasPressedLiar = true; // Mark that liar button has been pressed
+      //can only press liar button once 
+      _hasPressedLiar = true; 
     });
 
-    // Check if all cards match the top card, treating Jokers as wild cards
+    // Check if all cards match the top card or is a joker 
     bool allCardsMatch = _lastPlayedCards.every((card) => 
       card['value'] == _topLeftCard || card['value'] == 'Joker'
     );
     
-    // Remove tokens based on accusation outcome and who made the accusation
+    // token removal
     setState(() {
-      if (allCardsMatch) {
-        // If cards match (Accuser Should Drink), remove token from the accusing player
-        if (_isPlayer1Turn) {
-          _player1Tokens = _player1Tokens > 0 ? _player1Tokens - 1 : 0;
-        } else {
-          _player2Tokens = _player2Tokens > 0 ? _player2Tokens - 1 : 0;
+    if (allCardsMatch) {
+     
+      if (_isPlayer1Turn) {
+        if (_player1Tokens > 0) {
+          _player1Tokens -= 1;
         }
       } else {
-        // If cards don't match (LIAR SHOULD DRINK), remove token from the other player
-        if (_isPlayer1Turn) {
-          _player2Tokens = _player2Tokens > 0 ? _player2Tokens - 1 : 0;
-        } else {
-          _player1Tokens = _player1Tokens > 0 ? _player1Tokens - 1 : 0;
+        if (_player2Tokens > 0) {
+          _player2Tokens -= 1;
         }
       }
-    });
-
+    } else {
+      // If cards don't match (LIAR SHOULD DRINK), remove token from the other player
+      if (_isPlayer1Turn) {
+        if (_player2Tokens > 0) {
+          _player2Tokens -= 1;
+        }
+      } else {
+        if (_player1Tokens > 0) {
+          _player1Tokens -= 1;
+        }
+      }
+    }
+  });
+  String msg;
+        if(_isPlayer1Turn){
+            msg = "Player 1 TEST YOUR LUCK";
+               }
+                else{
+            msg = "Player 2 TEST YOUR LUCK";
+            }
+//STOPED REFACTORING HERE
     // Function to show Test Your Luck dialog
     void showTestYourLuck(bool isPlayer1) {
       double sliderValue = 1;
@@ -311,7 +333,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      isPlayer1 ? 'Player 1, test your luck!' : 'Player 2, test your luck!',
+                    msg,
                       style: const TextStyle(
                         fontSize: 18,
                         color: Colors.brown,
@@ -340,14 +362,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      'Lucky Number: ${isPlayer1 ? _player1LuckyNumber : _player2LuckyNumber}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Colors.brown,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  
                     if ((isPlayer1 ? _player1UsedNumbers : _player2UsedNumbers).isNotEmpty) ...[
                       const SizedBox(height: 10),
                       Text(
