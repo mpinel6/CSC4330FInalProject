@@ -13,30 +13,31 @@ class RulesPage extends StatelessWidget {
         backgroundColor: Colors.brown[700],
       ),
       backgroundColor: Colors.brown[100],
-      body: const LandscapeRulesLayout(),
+      body: const RulesLayout(),
     );
   }
 }
 
-class LandscapeRulesLayout extends StatelessWidget {
-  const LandscapeRulesLayout({super.key});
+class RulesLayout extends StatelessWidget {
+  const RulesLayout({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        // Left sidebar with navigation
-        Container(
-          width: MediaQuery.of(context).size.width * 0.25,
-          color: Colors.brown[200],
-          child: const RulesNavigation(),
-        ),
-        // Main content area
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(20.0),
-            child: const RulesContent(),
+        // Main content area - now takes full width
+        const Expanded(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+            child: RulesContent(),
           ),
+        ),
+        
+        // Bottom navigation bar
+        Container(
+          color: Colors.brown[200],
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+          child: const RulesNavigation(),
         ),
       ],
     );
@@ -52,45 +53,48 @@ class RulesNavigation extends StatelessWidget {
     final RulesContentState? rulesContentState = 
         context.findAncestorStateOfType<RulesContentState>();
         
-    return ListView(
-      padding: const EdgeInsets.all(12.0),
-      children: [
-        RulesSectionButton(
-          title: "Overview", 
-          index: 0,
-          onPressed: () => rulesContentState?.scrollToSection(0),
-        ),
-        const SizedBox(height: 8),
-        RulesSectionButton(
-          title: "Setup", 
-          index: 1,
-          onPressed: () => rulesContentState?.scrollToSection(1),
-        ),
-        const SizedBox(height: 8),
-        RulesSectionButton(
-          title: "Gameplay", 
-          index: 2,
-          onPressed: () => rulesContentState?.scrollToSection(2),
-        ),
-        const SizedBox(height: 8),
-        RulesSectionButton(
-          title: "Scoring", 
-          index: 3,
-          onPressed: () => rulesContentState?.scrollToSection(3),
-        ),
-        const SizedBox(height: 8),
-        RulesSectionButton(
-          title: "Special Rules", 
-          index: 4,
-          onPressed: () => rulesContentState?.scrollToSection(4),
-        ),
-        const SizedBox(height: 24),
-        Image.asset(
-          'assets/jokers_joint_logo.png', 
-          errorBuilder: (context, error, stackTrace) => 
-            const Icon(Icons.casino, size: 80, color: Colors.brown),
-        ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          RulesSectionButton(
+            title: "Overview", 
+            index: 0,
+            onPressed: () => rulesContentState?.scrollToSection(0),
+          ),
+          const SizedBox(width: 10),
+          RulesSectionButton(
+            title: "Setup", 
+            index: 1,
+            onPressed: () => rulesContentState?.scrollToSection(1),
+          ),
+          const SizedBox(width: 10),
+          RulesSectionButton(
+            title: "Gameplay", 
+            index: 2,
+            onPressed: () => rulesContentState?.scrollToSection(2),
+          ),
+          const SizedBox(width: 10),
+          RulesSectionButton(
+            title: "Lives", 
+            index: 3,
+            onPressed: () => rulesContentState?.scrollToSection(3),
+          ),
+          const SizedBox(width: 10),
+          RulesSectionButton(
+            title: "Special Rules", 
+            index: 4,
+            onPressed: () => rulesContentState?.scrollToSection(4),
+          ),
+          const SizedBox(width: 16),
+          IconButton(
+            icon: const Icon(Icons.casino, size: 32, color: Colors.brown),
+            onPressed: () => rulesContentState?._scrollToTop(),
+            tooltip: 'Back to top',
+          ),
+        ],
+      ),
     );
   }
 }
@@ -113,7 +117,7 @@ class RulesSectionButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.brown[400],
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 12.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0),
         ),
@@ -246,6 +250,9 @@ class RulesContentState extends State<RulesContent> {
               key: _sectionKeys[4],
               title: "Special Rules",
               content: "• Joker's Rule: Jokers are wild cards and can be played as any card type (Ace, King, or Queen)\n"
+                  "• Final Countdown: When the deck runs out, everyone gets one last turn to try to eliminate opponents\n"
+                  "• Bluff Master: If you successfully make 3 bluffs in a row without being challenged, you gain an extra life (max 3)\n"
+                  "• Card Counter: You may look through the discard pile once per round",
             ),
             const SizedBox(height: 32),
             Center(
@@ -267,8 +274,8 @@ class RulesContentState extends State<RulesContent> {
                 ),
               ),
             ),
-            // Add extra space at bottom for floating action button
-            const SizedBox(height: 60),
+            // Add extra space at bottom
+            const SizedBox(height: 30),
           ],
         ),
         // Back to top floating action button with animation
