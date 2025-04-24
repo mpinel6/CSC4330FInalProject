@@ -1,16 +1,11 @@
 import 'dart:math';
 
 class LiarsDeckAI {
-  final Random _rng = Random();
-  final Map<int, List<int>> playerClaimHistory = {}; // playerId -> list of claim counts
+  final Random _rng;
+  final Map<int, List<int>> playerClaimHistory = {};
 
-  /// Decide the AI's move: play X cards or challenge the previous player.
-  /// [hand] - AI's hand of cards (e.g. "Ace", "King", "Queen", "Joker", "Devil", "Master", "Chaos")
-  /// [tableCard] - Declared value for the round (e.g. "Ace")
-  /// [lastClaimCount] - Number of cards last player claimed (0 if AI goes first)
-  /// [mode] - "standard", "devil", or "chaos"
-  /// [lastPlayerId] - ID of the last player who made a claim
-  /// [roundNumber] - Current round number to adjust bluffing
+  LiarsDeckAI({Random? rng}) : _rng = rng ?? Random();
+
   Map<String, dynamic> decidePlay({
     required List<String> hand,
     required String tableCard,
@@ -19,35 +14,53 @@ class LiarsDeckAI {
     int? lastPlayerId,
     int roundNumber = 1,
   }) {
-    final matches = hand.where((card) => _isMatch(card, tableCard)).length;
-
-    if (mode == 'devil' && hand.contains('Devil')) {
-      final playDevil = _rng.nextBool();
-      if (playDevil) {
-        return {"action": "play", "count": 1, "special": "Devil"};
-      }
+    if (_shouldPlayDevil(hand, mode)) {
+      return {"action": "play", "count": 1, "special": "Devil"};
     }
 
     final maxClaim = (mode == 'chaos') ? 1 : min(3, hand.length);
 
-    if (lastClaimCount > 0 && lastPlayerId != null) {
-      final likelihood = _estimateTruthProbability(lastClaimCount, tableCard, mode);
-      final avgClaim = _averageClaim(lastPlayerId);
-
-      final isSuspicious = lastClaimCount > (avgClaim + 1);
-      final threshold = isSuspicious ? 0.5 : 0.3;
-
-      if (likelihood < threshold) {
-        return {"action": "challenge"};
-      }
+    if (_shouldChallenge(lastClaimCount, lastPlayerId, tableCard, mode)) {
+      return {"action": "challenge"};
     }
 
-    int safePlay = min(matches, maxClaim);
+    final play = _decideCardPlay(hand, tableCard, mode, roundNumber, maxClaim);
+
+    if (lastPlayerId != null && lastClaimCount > 0) {
+      playerClaimHistory.putIfAbsent(lastPlayerId, () => []).add(lastClaimCount);
+    }
+
+    return play;
+  }
+
+  bool _shouldPlayDevil(List<String> hand, String mode) {
+    return mode == 'devil' && hand.contains('Devil') && _rng.nextBool();
+  }
+
+  bool _shouldChallenge(int lastClaimCount, int? lastPlayerId, String tableCard, String mode) {
+    if (lastClaimCount == 0 || lastPlayerId == null) return false;
+    final likelihood = _estimateTruthProbability(lastClaimCount, tableCard, mode);
+    final avgClaim = _averageClaim(lastPlayerId);
+    final isSuspicious = lastClaimCount > (avgClaim + 1);
+    final threshold = isSuspicious ? 0.5 : 0.3;
+    return likelihood < threshold;
+  }
+
+  Map<String, dynamic> _decideCardPlay(
+    List<String> hand,
+    String tableCard,
+    String mode,
+    int roundNumber,
+    int maxClaim,
+  ) {
+    final matches = hand.where((card) => _isMatch(card, tableCard)).length;
+    final safePlay = min(matches, maxClaim);
 
     bool canBluff = hand.length >= 2;
+    double bluffChance = canBluff ? (0.4 + (roundNumber * 0.05)) : 0.0;
+    if (safePlay == 0 && canBluff) bluffChance += 0.3;
 
-    final bluffChance = canBluff ? (0.4 + (roundNumber * 0.05)) : 0.0;
-    final shouldBluff = safePlay == 0 || _rng.nextDouble() < bluffChance.clamp(0.0, 0.9);
+    final shouldBluff = safePlay == 0 || _rng.nextDouble() < bluffChance.clamp(0.0, 0.95);
     final cardsToPlay = shouldBluff ? _rng.nextInt(maxClaim) + 1 : safePlay;
 
     if (mode == 'chaos') {
@@ -59,14 +72,7 @@ class LiarsDeckAI {
       }
     }
 
-    if (lastPlayerId != null && lastClaimCount > 0) {
-      playerClaimHistory.putIfAbsent(lastPlayerId, () => []).add(lastClaimCount);
-    }
-
-    return {
-      "action": "play",
-      "count": cardsToPlay
-    };
+    return {"action": "play", "count": cardsToPlay};
   }
 
   bool _isMatch(String card, String tableCard) {
