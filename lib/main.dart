@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'rules_page.dart';
 import 'settings.dart';
 import 'lanhome.dart';
+import 'aihome.dart';
 import 'mattgamecoding.dart';
 
 void main() {
@@ -52,13 +53,15 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _selectedIndex = index;
     });
-    
-    if (index == 1) { // Rules button index
+
+    if (index == 1) {
+      // Rules button index
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const RulesPage()),
       );
-    } else if (index == 2) { // Settings button index
+    } else if (index == 2) {
+      // Settings button index
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const SettingsPage()),
@@ -113,7 +116,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.brown[700],
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -127,11 +131,15 @@ class _MyHomePageState extends State<MyHomePage> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  // Handle Play AI action
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const aihome()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.brown[700],
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -147,12 +155,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const mattgamecoding()),
+                    MaterialPageRoute(
+                        builder: (context) => const mattgamecoding()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.brown[700],
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
