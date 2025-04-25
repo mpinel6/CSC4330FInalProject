@@ -133,7 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const aihome()),
+                    MaterialPageRoute(builder: (context) => const aipage()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
