@@ -1,7 +1,7 @@
 import 'dart:math';
 
 /// AI logic for the Liars Deck card game.
-/// 
+///
 /// This class implements strategic decision-making for a player in a turn-based card game.
 /// It makes decisions such as playing honestly, bluffing, using special cards, or challenging
 /// another player's move, based on the current game state and claim history.
@@ -19,11 +19,17 @@ class LiarsDeckAI {
   /// Evaluates the hand, game state, and opponent history to determine an action.
   /// May return a play (with a card count or special card), or a challenge against the previous player.
   ///
-  /// - [hand]: List of cards in the player's hand.
-  /// - [tableCard]: The card type currently on the table.
+  /// - [hand]: List of max 5 Strings representing the cards in the player's hand.
+  ///       'Ace','King','Queen', and 'Joker' are the only valid members
+  ///        Only of 2 jokers exist in game, 6 of everything else
+  /// - [tableCard]: The card type that must be played this round.
   /// - [lastClaimCount]: The number of cards the last player claimed to have played.
   /// - [mode]: Game mode which may affect logic ('standard', 'chaos', 'devil').
   /// - [lastPlayerId]: ID of the last player who made a claim.
+  ///         This is an integer 1-4 corresponding to the player's position at the table.
+  ///         The player ID of a given AI is equal to (lastPlayerID + 1) modulus(num_total_players).
+  ///         This will change as players are eliminated and vacant seats are formed
+  ///
   /// - [roundNumber]: Current round number to help adjust bluffing likelihood over time.
   ///
   /// Returns a map with keys: 'action' (play/challenge), and optionally 'count' and 'special'.
@@ -41,14 +47,16 @@ class LiarsDeckAI {
 
     final maxClaim = (mode == 'chaos') ? 1 : min(3, hand.length);
 
-    if (_shouldChallenge(lastClaimCount, lastPlayerId, tableCard, mode)) {
+    if (_shouldChallenge(lastClaimCount, lastPlayerId, tableCard, mode, hand)) {
       return {"action": "challenge"};
     }
 
     final play = _decideCardPlay(hand, tableCard, mode, roundNumber, maxClaim);
 
     if (lastPlayerId != null && lastClaimCount > 0) {
-      playerClaimHistory.putIfAbsent(lastPlayerId, () => []).add(lastClaimCount);
+      playerClaimHistory
+          .putIfAbsent(lastPlayerId, () => [])
+          .add(lastClaimCount);
     }
 
     return play;
@@ -63,12 +71,22 @@ class LiarsDeckAI {
 
   /// Decides whether to challenge the previous player's claim.
   ///
-  /// The AI considers both the estimated truth probability of the claim
+  /// returns false if the AI is the first player of the round
+  /// returns false if the AI can play a hand better than the last played hand
+  /// If the AI cannot play a better hand,
+  /// the AI considers both the estimated truth probability of the claim
   /// and historical average claims from the player to determine if it appears suspicious.
   /// A higher claim than average increases suspicion.
-  bool _shouldChallenge(int lastClaimCount, int? lastPlayerId, String tableCard, String mode) {
-    if (lastClaimCount == 0 || lastPlayerId == null) return false;
-    final likelihood = _estimateTruthProbability(lastClaimCount, tableCard, mode);
+  bool _shouldChallenge(int lastClaimCount, int? lastPlayerId, String tableCard,
+      String mode, List<String> hand) {
+    if (lastClaimCount == 0 || lastPlayerId == null) {
+      return false;
+    } else if (currentBestCount(hand, tableCard) > lastClaimCount) {
+      return false;
+    }
+
+    final likelihood =
+        _estimateTruthProbability(lastClaimCount, tableCard, mode);
     final avgClaim = _averageClaim(lastPlayerId);
     final isSuspicious = lastClaimCount > (avgClaim + 1);
     final threshold = isSuspicious ? 0.5 : 0.3;
@@ -86,16 +104,21 @@ class LiarsDeckAI {
     int roundNumber,
     int maxClaim,
   ) {
-    final matches = hand.where((card) => _isMatch(card, tableCard)).length;
-    final safePlay = min(matches, maxClaim);
+    final bestCount = currentBestCount(hand, tableCard);
+    final safePlay = min(bestCount, maxClaim);
 
     bool canBluff = hand.length >= 2;
     double bluffChance = canBluff ? (0.4 + (roundNumber * 0.05)) : 0.0;
     if (safePlay == 0 && canBluff) bluffChance += 0.3;
 
-    final shouldBluff = safePlay == 0 || _rng.nextDouble() < bluffChance.clamp(0.0, 0.95);
+    final shouldBluff =
+        safePlay == 0 || _rng.nextDouble() < bluffChance.clamp(0.0, 0.95);
+
+    // Steven doesn't understand the line below this
+    // could you write a comment to explain it ?
     final cardsToPlay = shouldBluff ? _rng.nextInt(maxClaim) + 1 : safePlay;
 
+    /* this will probably never be used 
     if (mode == 'chaos') {
       if (hand.contains('Chaos') && _rng.nextDouble() < 0.2) {
         return {"action": "play", "count": 1, "special": "Chaos"};
@@ -104,6 +127,7 @@ class LiarsDeckAI {
         return {"action": "play", "count": 1, "special": "Master"};
       }
     }
+    */
 
     return {"action": "play", "count": cardsToPlay};
   }
@@ -120,12 +144,14 @@ class LiarsDeckAI {
   /// Based on the total availability of the card type in the game pool.
   /// If a player claims more cards than typically exist, the probability decreases.
   /// Accounts for different game modes ('standard' vs. 'chaos') with different card pools.
-  double _estimateTruthProbability(int claimCount, String tableCard, String mode) {
+  double _estimateTruthProbability(
+      int claimCount, String tableCard, String mode) {
     const standardPool = {'Ace': 6, 'King': 6, 'Queen': 6, 'Joker': 2};
     const chaosPool = {'King': 5, 'Queen': 5, 'Chaos': 1, 'Master': 1};
 
     final pool = mode == 'chaos' ? chaosPool : standardPool;
-    final total = (pool[tableCard] ?? 0) + (pool['Joker'] ?? 0) + (pool['Devil'] ?? 0);
+    final total =
+        (pool[tableCard] ?? 0) + (pool['Joker'] ?? 0) + (pool['Devil'] ?? 0);
     final ratio = claimCount / (total > 0 ? total : 1);
     return 1.0 - ratio.clamp(0.0, 1.0);
   }
@@ -138,5 +164,16 @@ class LiarsDeckAI {
     final history = playerClaimHistory[playerId];
     if (history == null || history.isEmpty) return 1.0;
     return history.reduce((a, b) => a + b) / history.length;
+  }
+
+  // computes the best amount of cards of a given type that the ai could play
+  int currentBestCount(List<String> hand, String tableCard) {
+    int bestCount = 0;
+    for (int i = 0; i < hand.length; i++) {
+      if (_isMatch(hand[i], tableCard)) {
+        bestCount++;
+      }
+    }
+    return bestCount;
   }
 }
