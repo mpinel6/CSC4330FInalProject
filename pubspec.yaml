@@ -68,6 +68,7 @@ flutter:
      - assets/images/joker.jpg
      - assets/images/king.jpg
      - assets/images/queen.jpg
+     - assets/images/back.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
