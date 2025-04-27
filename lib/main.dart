@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'matt_home_page.dart';
-import 'package:flutter/material.dart';
 import 'rules_page.dart';
 import 'settings.dart';
 import 'lanhome.dart';
@@ -14,7 +13,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -43,7 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   int _selectedIndex = 0;
 
-  void _incrementCounter() {
+    void _incrementCounter() {
     setState(() {
       _counter++;
     });
@@ -55,13 +53,11 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     if (index == 1) {
-      // Rules button index
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const RulesPage()),
       );
     } else if (index == 2) {
-      // Settings button index
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const SettingsPage()),
@@ -71,111 +67,38 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+
     return Scaffold(
-      backgroundColor: Colors.brown[100],
-      appBar: AppBar(
-        backgroundColor: Colors.brown[700],
-        elevation: 4,
-        title: Text(
-          widget.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: <Widget>[
-              const Text(
-                'Welcome to',
-                style: TextStyle(fontSize: 20, color: Colors.brown),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Jokers Joint',
-                style: TextStyle(
-                  fontSize: 32,
+      backgroundColor: Colors.transparent,
+      appBar: isPortrait
+          ? AppBar(
+              backgroundColor: Colors.brown[700],
+              elevation: 4,
+              title: Text(
+                widget.title,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  color: Colors.brown[700],
-                  letterSpacing: 1.5,
+                  letterSpacing: 1.2,
                 ),
               ),
-              const SizedBox(height: 60),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const lanhome()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.brown[700],
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 6,
-                ),
-                child: const Text(
-                  'Play LAN',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const aipage()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.brown[700],
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 6,
-                ),
-                child: const Text(
-                  'Play AI',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const mattgamecoding()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.brown[700],
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 6,
-                ),
-                child: const Text(
-                  'QuickStartTest',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
-              ),
-            ],
+              centerTitle: true,
+            )
+          : null, 
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/images/back.jpg',
+            fit: BoxFit.cover,
           ),
-        ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return isPortrait ? _buildPortraitLayout() : _buildLandscapeLayout();
+            },
+          ),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
@@ -196,6 +119,127 @@ class _MyHomePageState extends State<MyHomePage> {
         selectedItemColor: Colors.brown[700],
         backgroundColor: Colors.brown[200],
         onTap: _onItemTapped,
+      ),
+    );
+  }
+
+  Widget _buildPortraitLayout() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: <Widget>[
+        const SizedBox(height: 100),
+        const Text(
+          'Welcome to',
+          style: TextStyle(
+            fontSize: 30,
+            color: Colors.white,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 30),
+        const SizedBox(height: 280), 
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Flexible(
+              child: buildButton('Play LAN', () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const lanhome()),
+                );
+              }),
+            ),
+            Flexible(
+              child: buildButton('Play AI', () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const aipage()),
+                );
+              }),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        buildButton('QuickStartTest', () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const mattgamecoding()),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildLandscapeLayout() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 5,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Text(
+                  'Welcome to',
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 5,
+            child: SingleChildScrollView( 
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  buildButton('Play LAN', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const lanhome()),
+                    );
+                  }),
+                  const SizedBox(height: 20),
+                  buildButton('Play AI', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const aipage()),
+                    );
+                  }),
+                  const SizedBox(height: 20),
+                  buildButton('QuickStartTest', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const mattgamecoding()),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget buildButton(String label, VoidCallback onPressed) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.brown[700],
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        elevation: 8,
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 18, color: Colors.white),
       ),
     );
   }
