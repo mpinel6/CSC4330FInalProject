@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'gamevsAI.dart';
 import 'matt_home_page.dart';
 import 'rules_page.dart';
 import 'settings.dart';
@@ -153,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
               child: buildButton('Play AI', () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const aipage()),
+                  MaterialPageRoute(builder: (context) => const Gamevsai()),
                 );
               }),
             ),
@@ -207,7 +208,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   buildButton('Play AI', () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const aipage()),
+                      MaterialPageRoute(builder: (context) => const Gamevsai()),
                     );
                   }),
                   const SizedBox(height: 20),

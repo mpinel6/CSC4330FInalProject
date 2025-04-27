@@ -43,8 +43,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Map<String, bool> _cardSelections = {};
   Map<String, bool> _player2CardSelections = {};
   List<Map<String, dynamic>> _lastPlayedCards = [];
-  int _player1Tokens = 3;
-  int _player2Tokens = 3;
+  int _player1Tokens = 6;
+  int _player2Tokens = 6;
   int _player1LuckyNumber = 0;
   int _player2LuckyNumber = 0;
   List<int> _player1UsedNumbers = [];
@@ -59,6 +59,11 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<String> _topCards = [
     'Ace', 'King', 'Queen'
   ];
+
+
+
+
+
 
   void _addSecondPlayer() {
     setState(() {
@@ -118,7 +123,19 @@ void _dealCards() {
   }
 }
 
- 
+void _cpuTurn(){
+  if(_player2Cards.isNotEmpty){
+    var playCard = _player2Cards.first;
+    setState(() {
+      _lastPlayedCards = [playCard];
+      _player2Cards.removeAt(0);
+      _player2CardSelections.clear();
+      _isPlayer1Turn = true;
+    });
+  }
+}
+
+
 
   void _playSelectedCards() {
     setState(() {
@@ -127,14 +144,12 @@ void _dealCards() {
         _lastPlayedCards = _selectedCards.where((card) => _cardSelections['${card['id']}'] == true).toList();
         _selectedCards.removeWhere((card) => _cardSelections['${card['id']}'] == true);
         _cardSelections.clear();
-      } else {
-        _lastPlayedCards = _player2Cards.where((card) => _player2CardSelections['${card['id']}'] == true).toList();
-        _player2Cards.removeWhere((card) => _player2CardSelections['${card['id']}'] == true);
-        _player2CardSelections.clear();
-      }
-      
+      } 
       // Switch turns 
       _isPlayer1Turn = !_isPlayer1Turn;
+      if (!_isPlayer1Turn && _hasSecondPlayer) {
+  Future.delayed(const Duration(seconds: 1), _cpuTurn);
+}
 // Reset liar button
       _hasPressedLiar = false; 
       String displayWinner;
