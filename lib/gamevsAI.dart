@@ -125,13 +125,22 @@ void _dealCards() {
 
 void _cpuTurn(){
   if(_player2Cards.isNotEmpty){
+    final randomMove = Random();
+    int moveChoice = randomMove.nextInt(2)+1;
     var playCard = _player2Cards.first;
+
+    if (moveChoice == 2){
     setState(() {
       _lastPlayedCards = [playCard];
       _player2Cards.removeAt(0);
       _player2CardSelections.clear();
       _isPlayer1Turn = true;
+    
     });
+    }else{
+      _checkLiar();
+    }
+
   }
 }
 
@@ -834,18 +843,12 @@ void _cpuTurn(){
                                     Row(
                                       children: [
                                         Image.asset(
-                                          'assets/images/${card['value'].toLowerCase()}.jpg',
+                                          'assets/images/back.jpg',
                                           width: 40,
                                           height: 60,
                                         ),
                                         const SizedBox(width: 8),
-                                        Text(
-                                          card['value'],
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            color: Colors.brown,
-                                          ),
-                                        ),
+                                     
                                       ],
                                     ),
                                   ],
