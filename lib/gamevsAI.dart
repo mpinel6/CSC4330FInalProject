@@ -743,9 +743,12 @@ void _cpuTurn(){
                                   Checkbox(
                                     value: _cardSelections['${card['id']}'] ?? false,
                                     onChanged: _isPlayer1Turn ? (bool? value) {
+                                      int maxCard3 = _cardSelections.values.where((selected) => selected).length;
+                                      if (maxCard3 < 3 || value == false){
                                       setState(() {
                                         _cardSelections['${card['id']}'] = value ?? false;
                                       });
+                                      }
                                     } : null,
                                     activeColor: Colors.brown[700],
                                   ),
