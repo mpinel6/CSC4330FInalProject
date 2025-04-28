@@ -3,6 +3,7 @@ import 'rules_page.dart';
 import 'settings.dart';
 import 'matt_home_page.dart';
 import 'dart:math';
+import 'main.dart';
 
 class Gamevsai extends StatelessWidget {
   const Gamevsai({super.key});
@@ -34,7 +35,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
   bool _hasDealt = false;
-  bool _hasSecondPlayer = false;
+  bool _hasSecondPlayer = true;
   bool _isPlayer1Turn = true;
   bool _hasPressedLiar = false; 
   List<Map<String, dynamic>> _selectedCards = [];
@@ -43,8 +44,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Map<String, bool> _cardSelections = {};
   Map<String, bool> _player2CardSelections = {};
   List<Map<String, dynamic>> _lastPlayedCards = [];
-  int _player1Tokens = 6;
-  int _player2Tokens = 6;
+  int _player1Tokens = 3;
+  int _player2Tokens = 3;
   int _player1LuckyNumber = 0;
   int _player2LuckyNumber = 0;
   List<int> _player1UsedNumbers = [];
@@ -125,13 +126,30 @@ void _dealCards() {
 
 void _cpuTurn(){
   if(_player2Cards.isNotEmpty){
+    final randomMove = Random();
+    int moveChoice = randomMove.nextInt(2)+1;
     var playCard = _player2Cards.first;
+
+    if (moveChoice == 2){
     setState(() {
       _lastPlayedCards = [playCard];
       _player2Cards.removeAt(0);
       _player2CardSelections.clear();
       _isPlayer1Turn = true;
+    
     });
+    }else{
+      _checkLiar();
+      setState(() {
+      _lastPlayedCards = [playCard];
+      _player2Cards.removeAt(0);
+      _player2CardSelections.clear();
+      _isPlayer1Turn = true;
+    
+    });
+
+    }
+
   }
 }
 
@@ -204,7 +222,7 @@ void _cpuTurn(){
                         Navigator.of(context).pop();
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const matthomepage()),
+                          MaterialPageRoute(builder: (context) => const MyApp()),
                         );
                       },
                       child: const Text(
@@ -223,7 +241,7 @@ void _cpuTurn(){
                         setState(() {
                           // Reset game state
                           _hasDealt = false;
-                          _hasSecondPlayer = false;
+                          _hasSecondPlayer = true;
                           _isPlayer1Turn = true;
                           _selectedCards = [];
                           _player2Cards = [];
@@ -282,7 +300,7 @@ void _cpuTurn(){
     bool allCardsMatch = _lastPlayedCards.every((card) => 
       card['value'] == _topLeftCard || card['value'] == 'Joker'
     );
-    
+    String message = '';
     // token removal
     setState(() {
     if (allCardsMatch) {
@@ -290,10 +308,13 @@ void _cpuTurn(){
       if (_isPlayer1Turn) {
         if (_player1Tokens > 0) {
           _player1Tokens -= 1;
+          message = 'Player 1 loses a token';
+          
         }
       } else {
         if (_player2Tokens > 0) {
           _player2Tokens -= 1;
+          message = 'Player 2 loses a token';
         }
       }
     } else {
@@ -301,10 +322,12 @@ void _cpuTurn(){
       if (_isPlayer1Turn) {
         if (_player2Tokens > 0) {
           _player2Tokens -= 1;
+         message = 'Player 2 loses a token';
         }
       } else {
         if (_player1Tokens > 0) {
           _player1Tokens -= 1;
+          message = 'Player 1 loses a token';
         }
       }
     }
@@ -548,22 +571,6 @@ void _cpuTurn(){
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        String message;
-        if (allCardsMatch) {
-          if(_isPlayer1Turn){
-            message = "Player 1 rolls the die";
-          }else{
-            message = "Player 2 rolls the die";
-          }
-       
-        } else {
-                    if(_isPlayer1Turn){
-            message = "Player 2 rolls the die";
-          }else{
-            message = "Player 1 rolls the die";
-          }
-        }
-        
         return AlertDialog(
           backgroundColor: Colors.brown[100],
           title: Text(
@@ -579,13 +586,13 @@ void _cpuTurn(){
                 Navigator.of(context).pop();
                 // Show Test Your Luck for the player who should drink
                 if (allCardsMatch) {
-                  showTestYourLuck(_isPlayer1Turn);
+                  //showTestYourLuck(_isPlayer1Turn);
                 } else {
-                  showTestYourLuck(!_isPlayer1Turn);
+                  //showTestYourLuck(!_isPlayer1Turn);
                 }
               },
               child: const Text(
-                'Test Your Luck',
+                'Return To Game',
                 style: TextStyle(
                   color: Colors.brown,
                   fontWeight: FontWeight.bold,
@@ -606,7 +613,7 @@ void _cpuTurn(){
     if (index == 0) { // Home button index
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const matthomepage()),
+        MaterialPageRoute(builder: (context) => const MyApp()),
       );
     } else if (index == 1) { // Rules button index
       Navigator.push(
@@ -736,9 +743,12 @@ void _cpuTurn(){
                                   Checkbox(
                                     value: _cardSelections['${card['id']}'] ?? false,
                                     onChanged: _isPlayer1Turn ? (bool? value) {
+                                      int maxCard3 = _cardSelections.values.where((selected) => selected).length;
+                                      if (maxCard3 < 3 || value == false){
                                       setState(() {
                                         _cardSelections['${card['id']}'] = value ?? false;
                                       });
+                                      }
                                     } : null,
                                     activeColor: Colors.brown[700],
                                   ),
@@ -834,18 +844,12 @@ void _cpuTurn(){
                                     Row(
                                       children: [
                                         Image.asset(
-                                          'assets/images/${card['value'].toLowerCase()}.jpg',
+                                          'assets/images/back.jpg',
                                           width: 40,
                                           height: 60,
                                         ),
                                         const SizedBox(width: 8),
-                                        Text(
-                                          card['value'],
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            color: Colors.brown,
-                                          ),
-                                        ),
+                                     
                                       ],
                                     ),
                                   ],
@@ -860,8 +864,8 @@ void _cpuTurn(){
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ElevatedButton(
-                          onPressed: () {
-                            // Check if any cards are selected for the current player
+                          onPressed: _isPlayer1Turn ? () {
+                           //disables the button for player 1 on ai turn
                             bool hasSelectedCards = _isPlayer1Turn
                                 ? _cardSelections.values.any((selected) => selected)
                                 : _player2CardSelections.values.any((selected) => selected);
@@ -869,7 +873,8 @@ void _cpuTurn(){
                             if (hasSelectedCards) {
                               _playSelectedCards();
                             }
-                          },
+                          }: null,
+
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.brown[700],
                             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
@@ -891,7 +896,8 @@ void _cpuTurn(){
                         ),
                         const SizedBox(width: 20),
                         ElevatedButton(
-                          onPressed: _hasPressedLiar ? null : _checkLiar,
+                          //disables player on ai turn
+                          onPressed: (!_isPlayer1Turn ||_hasPressedLiar) ? null : _checkLiar,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _hasPressedLiar ? Colors.grey : Colors.red[700],
                             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
