@@ -727,22 +727,12 @@ void _dealCards() {
                                     } : null,
                                     activeColor: Colors.brown[700],
                                   ),
-                                  Row(
-                                    children: [
-                                      Image.asset(
-                                        'assets/images/${card['value'].toLowerCase()}.jpg',
-                                        width: 40,
-                                        height: 60,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        card['value'],
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          color: Colors.brown,
-                                        ),
-                                      ),
-                                    ],
+                                  Text(
+                                    card['value'],
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      color: Colors.brown,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -816,22 +806,12 @@ void _dealCards() {
                                       } : null,
                                       activeColor: Colors.brown[700],
                                     ),
-                                    Row(
-                                      children: [
-                                        Image.asset(
-                                          'assets/images/${card['value'].toLowerCase()}.jpg',
-                                          width: 40,
-                                          height: 60,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          card['value'],
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            color: Colors.brown,
-                                          ),
-                                        ),
-                                      ],
+                                    Text(
+                                      card['value'],
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        color: Colors.brown,
+                                      ),
                                     ),
                                   ],
                                 ),
