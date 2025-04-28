@@ -903,6 +903,7 @@ void _cpuTurn(){
                         ),
                         const SizedBox(width: 20),
                         ElevatedButton(
+                          //disables player on ai turn
                           onPressed: (!_isPlayer1Turn ||_hasPressedLiar) ? null : _checkLiar,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _hasPressedLiar ? Colors.grey : Colors.red[700],
