@@ -18,6 +18,9 @@ class RulesPage extends StatelessWidget {
   }
 }
 
+// Add this global key to access the RulesContent state
+final GlobalKey<RulesContentState> rulesContentKey = GlobalKey<RulesContentState>();
+
 class RulesLayout extends StatelessWidget {
   const RulesLayout({super.key});
 
@@ -26,10 +29,11 @@ class RulesLayout extends StatelessWidget {
     return Column(
       children: [
         // Main content area - now takes full width
-        const Expanded(
+        Expanded(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-            child: RulesContent(),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+            // Pass the global key to RulesContent
+            child: RulesContent(key: rulesContentKey),
           ),
         ),
         
@@ -49,10 +53,7 @@ class RulesNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // We need to access the RulesContent's scrolling method
-    final RulesContentState? rulesContentState = 
-        context.findAncestorStateOfType<RulesContentState>();
-        
+    // Use the global key to access the state directly - no need for findAncestorStateOfType
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -61,36 +62,36 @@ class RulesNavigation extends StatelessWidget {
           RulesSectionButton(
             title: "Overview", 
             index: 0,
-            onPressed: () => rulesContentState?.scrollToSection(0),
+            onPressed: () => rulesContentKey.currentState?.scrollToSection(0),
           ),
           const SizedBox(width: 10),
           RulesSectionButton(
             title: "Setup", 
             index: 1,
-            onPressed: () => rulesContentState?.scrollToSection(1),
+            onPressed: () => rulesContentKey.currentState?.scrollToSection(1),
           ),
           const SizedBox(width: 10),
           RulesSectionButton(
             title: "Gameplay", 
             index: 2,
-            onPressed: () => rulesContentState?.scrollToSection(2),
+            onPressed: () => rulesContentKey.currentState?.scrollToSection(2),
           ),
           const SizedBox(width: 10),
           RulesSectionButton(
             title: "Lives", 
             index: 3,
-            onPressed: () => rulesContentState?.scrollToSection(3),
+            onPressed: () => rulesContentKey.currentState?.scrollToSection(3),
           ),
           const SizedBox(width: 10),
           RulesSectionButton(
             title: "Special Rules", 
             index: 4,
-            onPressed: () => rulesContentState?.scrollToSection(4),
+            onPressed: () => rulesContentKey.currentState?.scrollToSection(4),
           ),
           const SizedBox(width: 16),
           IconButton(
             icon: const Icon(Icons.casino, size: 32, color: Colors.brown),
-            onPressed: () => rulesContentState?._scrollToTop(),
+            onPressed: () => rulesContentKey.currentState?._scrollToTop(),
             tooltip: 'Back to top',
           ),
         ],
