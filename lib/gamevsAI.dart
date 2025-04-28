@@ -3,6 +3,7 @@ import 'rules_page.dart';
 import 'settings.dart';
 import 'matt_home_page.dart';
 import 'dart:math';
+import 'main.dart';
 
 class Gamevsai extends StatelessWidget {
   const Gamevsai({super.key});
@@ -34,7 +35,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
   bool _hasDealt = false;
-  bool _hasSecondPlayer = false;
+  bool _hasSecondPlayer = true;
   bool _isPlayer1Turn = true;
   bool _hasPressedLiar = false; 
   List<Map<String, dynamic>> _selectedCards = [];
@@ -221,7 +222,7 @@ void _cpuTurn(){
                         Navigator.of(context).pop();
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const matthomepage()),
+                          MaterialPageRoute(builder: (context) => const MyApp()),
                         );
                       },
                       child: const Text(
@@ -623,7 +624,7 @@ void _cpuTurn(){
     if (index == 0) { // Home button index
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const matthomepage()),
+        MaterialPageRoute(builder: (context) => const MyApp()),
       );
     } else if (index == 1) { // Rules button index
       Navigator.push(
