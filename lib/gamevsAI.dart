@@ -44,8 +44,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Map<String, bool> _cardSelections = {};
   Map<String, bool> _player2CardSelections = {};
   List<Map<String, dynamic>> _lastPlayedCards = [];
-  int _player1Tokens = 6;
-  int _player2Tokens = 6;
+  int _player1Tokens = 3;
+  int _player2Tokens = 3;
   int _player1LuckyNumber = 0;
   int _player2LuckyNumber = 0;
   List<int> _player1UsedNumbers = [];
@@ -241,7 +241,7 @@ void _cpuTurn(){
                         setState(() {
                           // Reset game state
                           _hasDealt = false;
-                          _hasSecondPlayer = false;
+                          _hasSecondPlayer = true;
                           _isPlayer1Turn = true;
                           _selectedCards = [];
                           _player2Cards = [];
@@ -300,7 +300,7 @@ void _cpuTurn(){
     bool allCardsMatch = _lastPlayedCards.every((card) => 
       card['value'] == _topLeftCard || card['value'] == 'Joker'
     );
-    
+    String message = '';
     // token removal
     setState(() {
     if (allCardsMatch) {
@@ -308,10 +308,13 @@ void _cpuTurn(){
       if (_isPlayer1Turn) {
         if (_player1Tokens > 0) {
           _player1Tokens -= 1;
+          message = 'Player 1 loses a token';
+          
         }
       } else {
         if (_player2Tokens > 0) {
           _player2Tokens -= 1;
+          message = 'Player 2 loses a token';
         }
       }
     } else {
@@ -319,10 +322,12 @@ void _cpuTurn(){
       if (_isPlayer1Turn) {
         if (_player2Tokens > 0) {
           _player2Tokens -= 1;
+         message = 'Player 2 loses a token';
         }
       } else {
         if (_player1Tokens > 0) {
           _player1Tokens -= 1;
+          message = 'Player 1 loses a token';
         }
       }
     }
@@ -566,22 +571,6 @@ void _cpuTurn(){
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        String message;
-        if (allCardsMatch) {
-          if(_isPlayer1Turn){
-            message = "Player 1 rolls the die";
-          }else{
-            message = "Player 2 rolls the die";
-          }
-       
-        } else {
-                    if(_isPlayer1Turn){
-            message = "Player 2 rolls the die";
-          }else{
-            message = "Player 1 rolls the die";
-          }
-        }
-        
         return AlertDialog(
           backgroundColor: Colors.brown[100],
           title: Text(
@@ -597,13 +586,13 @@ void _cpuTurn(){
                 Navigator.of(context).pop();
                 // Show Test Your Luck for the player who should drink
                 if (allCardsMatch) {
-                  showTestYourLuck(_isPlayer1Turn);
+                  //showTestYourLuck(_isPlayer1Turn);
                 } else {
-                  showTestYourLuck(!_isPlayer1Turn);
+                  //showTestYourLuck(!_isPlayer1Turn);
                 }
               },
               child: const Text(
-                'Test Your Luck',
+                'Return To Game',
                 style: TextStyle(
                   color: Colors.brown,
                   fontWeight: FontWeight.bold,
