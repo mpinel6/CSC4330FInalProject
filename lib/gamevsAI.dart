@@ -139,6 +139,14 @@ void _cpuTurn(){
     });
     }else{
       _checkLiar();
+      setState(() {
+      _lastPlayedCards = [playCard];
+      _player2Cards.removeAt(0);
+      _player2CardSelections.clear();
+      _isPlayer1Turn = true;
+    
+    });
+
     }
 
   }
@@ -863,8 +871,8 @@ void _cpuTurn(){
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ElevatedButton(
-                          onPressed: () {
-                            // Check if any cards are selected for the current player
+                          onPressed: _isPlayer1Turn ? () {
+                           //disables the button for player 1 on ai turn
                             bool hasSelectedCards = _isPlayer1Turn
                                 ? _cardSelections.values.any((selected) => selected)
                                 : _player2CardSelections.values.any((selected) => selected);
@@ -872,7 +880,8 @@ void _cpuTurn(){
                             if (hasSelectedCards) {
                               _playSelectedCards();
                             }
-                          },
+                          }: null,
+
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.brown[700],
                             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
@@ -894,7 +903,7 @@ void _cpuTurn(){
                         ),
                         const SizedBox(width: 20),
                         ElevatedButton(
-                          onPressed: _hasPressedLiar ? null : _checkLiar,
+                          onPressed: (!_isPlayer1Turn ||_hasPressedLiar) ? null : _checkLiar,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _hasPressedLiar ? Colors.grey : Colors.red[700],
                             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
