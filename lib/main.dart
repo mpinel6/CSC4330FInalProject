@@ -21,7 +21,6 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
         useMaterial3: true,
-        fontFamily: 'Roboto',
       ),
       home: const MyHomePage(title: 'Jokers Joint'),
       debugShowCheckedModeBanner: false,
@@ -42,7 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   int _selectedIndex = 0;
 
-    void _incrementCounter() {
+  void _incrementCounter() {
     setState(() {
       _counter++;
     });
@@ -68,7 +67,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    final bool isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -86,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               centerTitle: true,
             )
-          : null, 
+          : null,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -96,7 +96,9 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           LayoutBuilder(
             builder: (context, constraints) {
-              return isPortrait ? _buildPortraitLayout() : _buildLandscapeLayout();
+              return isPortrait
+                  ? _buildPortraitLayout()
+                  : _buildLandscapeLayout();
             },
           ),
         ],
@@ -132,13 +134,57 @@ class _MyHomePageState extends State<MyHomePage> {
         const Text(
           'Welcome to',
           style: TextStyle(
-            fontSize: 30,
+            fontSize: 45,
             color: Colors.white,
+            fontFamily: 'Zubilo',
+            fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(
+                offset: Offset(-1, -1),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(1, -1),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(-1, 1),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(1, 1),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(0, -1),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(0, 1),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(-1, 0),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(1, 0),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+            ],
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 30),
-        const SizedBox(height: 280), 
+        const SizedBox(height: 340),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -184,8 +230,52 @@ class _MyHomePageState extends State<MyHomePage> {
                 Text(
                   'Welcome to',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 35,
                     color: Colors.white,
+                    fontFamily: 'Zubilo',
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(-1, -1),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(1, -1),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(-1, 1),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(1, 1),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(0, -1),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(0, 1),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(-1, 0),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(1, 0),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                    ],
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -194,7 +284,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           Expanded(
             flex: 5,
-            child: SingleChildScrollView( 
+            child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -215,7 +305,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   buildButton('QuickStartTest', () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const mattgamecoding()),
+                      MaterialPageRoute(
+                          builder: (context) => const mattgamecoding()),
                     );
                   }),
                 ],
@@ -240,7 +331,12 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 18, color: Colors.white),
+        style: const TextStyle(
+          fontSize: 22,
+          color: Colors.white,
+          fontFamily: 'Zubilo',
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
