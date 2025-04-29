@@ -39,7 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _hasPressedLiar = false; 
   List<Map<String, dynamic>> _selectedCards = [];
   List<Map<String, dynamic>> _player2Cards = [];
-  String? _topLeftCard;
+  String? _topLeftCard; //this is the card used that the game should be played off of
   Map<String, bool> _cardSelections = {};
   Map<String, bool> _player2CardSelections = {};
   List<Map<String, dynamic>> _lastPlayedCards = [];
@@ -77,7 +77,7 @@ void _dealCards() {
       // the rng mechanic for the roulette
       _player1UsedNumbers = [];
       _player2UsedNumbers = [];
-      // each player has a random number that is defined at dealing that will be the reason they lose 
+      // each player has a random number that is defined at dealing that will be the reason they lose - taken out
       _player1LuckyNumber = random.nextInt(6) + 1;
       _player2LuckyNumber = random.nextInt(6) + 1;
 
@@ -246,7 +246,7 @@ void _dealCards() {
       }
     });
   }
-
+// liar button, checks to see if cards match and makes sure someone has actually played a card
   void _checkLiar() {
     if (_lastPlayedCards.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -282,7 +282,7 @@ void _dealCards() {
         }
       }
     } else {
-      // If cards don't match (LIAR SHOULD DRINK), remove token from the other player
+  
       if (_isPlayer1Turn) {
         if (_player2Tokens > 0) {
           _player2Tokens -= 1;
@@ -294,6 +294,7 @@ void _dealCards() {
       }
     }
   });
+  //below was taken out 
   String msg;
         if(_isPlayer1Turn){
             msg = "Player 1 TEST YOUR LUCK";
