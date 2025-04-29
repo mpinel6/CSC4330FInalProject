@@ -108,7 +108,6 @@ void _dealCards() {
       _player2CardSelections = {for (var card in _player2Cards) '${card['id']}': false};
     });
   } else {
-    // out of cards
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('error'),
