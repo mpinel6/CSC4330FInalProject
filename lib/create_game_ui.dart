@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'multiplayer.dart';
 import 'network_discovery.dart';
+import 'sync_test_game.dart';
+import 'game_state_manager.dart';
 
 class CreateGamePage extends StatefulWidget {
   const CreateGamePage({super.key});
@@ -74,8 +76,16 @@ class _CreateGamePageState extends State<CreateGamePage> {
       return;
     }
     
-    // Navigate to game screen
-    // Navigator.of(context).push(...);
+    // Navigate to the sync test game screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SyncTestGame(
+          multiplayerService: _multiplayerService,
+          isHost: true,
+          gameCode: _gameCode!,
+        ),
+      ),
+    );
   }
 
   @override

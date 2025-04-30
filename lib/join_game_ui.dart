@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'multiplayer.dart';
 import 'network_discovery.dart';
+import 'sync_test_game.dart';
+import 'game_state_manager.dart';
 
 class JoinGamePage extends StatefulWidget {
   const JoinGamePage({super.key});
@@ -13,6 +16,12 @@ class _JoinGamePageState extends State<JoinGamePage> {
   final TextEditingController _codeController = TextEditingController();
   final NetworkDiscovery _networkDiscovery = NetworkDiscovery();
   final MultiplayerService _multiplayerService = MultiplayerService();
+  
+  // Game state management
+  GameStateManager? _gameStateManager;
+  StreamSubscription? _stateSubscription;
+  String? _connectedCode;
+  
   bool _isScanning = false;
   List<String> _availableHosts = [];
   String? _statusMessage;
@@ -23,13 +32,32 @@ class _JoinGamePageState extends State<JoinGamePage> {
     _multiplayerService.connectionStatus.listen((status) {
       setState(() {
         _statusMessage = status;
+        
+        // If successfully joined, set up game state manager
+        if (status.contains('Joined game successfully')) {
+          _gameStateManager = GameStateManager(_multiplayerService);
+          
+          // Listen for game state changes
+          _stateSubscription = _gameStateManager!.stateStream.listen((state) {
+            // If game phase changes to playing, navigate to game screen
+            if (state['gamePhase'] == 'playing' && _connectedCode != null) {
+              _navigateToGame();
+            }
+          });
+        }
       });
     });
+    
+    // Add special option for emulator testing
+    if (_availableHosts.isEmpty) {
+      _availableHosts.add('10.0.2.2');  // Special IP for emulator to host connection
+    }
   }
   
   @override
   void dispose() {
     _codeController.dispose();
+    _stateSubscription?.cancel();
     _multiplayerService.dispose();
     super.dispose();
   }
@@ -45,15 +73,24 @@ class _JoinGamePageState extends State<JoinGamePage> {
       
       setState(() {
         _availableHosts = hosts;
+        // Always add the emulator host option
+        if (!_availableHosts.contains('10.0.2.2')) {
+          _availableHosts.add('10.0.2.2');
+        }
+        
         _isScanning = false;
         _statusMessage = hosts.isEmpty 
-            ? 'No games found on local network' 
+            ? 'No games found on local network. Try the emulator option (10.0.2.2).' 
             : 'Found ${hosts.length} potential hosts';
       });
     } catch (e) {
       setState(() {
         _isScanning = false;
         _statusMessage = 'Scan error: $e';
+        // Add emulator host option even after error
+        if (_availableHosts.isEmpty) {
+          _availableHosts.add('10.0.2.2');
+        }
       });
     }
   }
@@ -74,9 +111,31 @@ class _JoinGamePageState extends State<JoinGamePage> {
     final success = await _multiplayerService.joinGameSession(code, hostIp);
     
     if (success) {
-      // Navigate to game screen
-      // Navigator.of(context).push(...);
+      _connectedCode = code;
+      // Wait for host to start the game
+      setState(() {
+        _statusMessage = 'Connected! Waiting for host to start the game...';
+      });
     }
+  }
+  
+  void _navigateToGame() {
+    // Prevent multiple navigations
+    if (_stateSubscription == null) return;
+    
+    _stateSubscription!.cancel();
+    _stateSubscription = null;
+    
+    // Navigate to the game screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SyncTestGame(
+          multiplayerService: _multiplayerService,
+          isHost: false,
+          gameCode: _connectedCode!,
+        ),
+      ),
+    );
   }
 
   @override
@@ -102,15 +161,30 @@ class _JoinGamePageState extends State<JoinGamePage> {
               maxLength: 6,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _isScanning ? null : _scanForGames,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.brown[400],
-                foregroundColor: Colors.white,
-              ),
-              child: _isScanning 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('FIND GAMES ON LOCAL NETWORK'),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isScanning ? null : _scanForGames,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.brown[400],
+                      foregroundColor: Colors.white,
+                    ),
+                    child: _isScanning 
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('FIND GAMES ON NETWORK'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () => _joinGame('10.0.2.2'), 
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber[700],
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('EMULATOR TEST'),
+                ),
+              ],
             ),
             if (_statusMessage != null) ...[
               const SizedBox(height: 16),
@@ -119,7 +193,9 @@ class _JoinGamePageState extends State<JoinGamePage> {
                 style: TextStyle(
                   color: _statusMessage!.contains('error') || _statusMessage!.contains('Failed')
                       ? Colors.red
-                      : Colors.green[700],
+                      : _statusMessage!.contains('Connected!')
+                          ? Colors.green[900]
+                          : Colors.green[700],
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -132,9 +208,11 @@ class _JoinGamePageState extends State<JoinGamePage> {
                   : ListView.builder(
                       itemCount: _availableHosts.length,
                       itemBuilder: (context, index) {
+                        final isEmulator = _availableHosts[index] == '10.0.2.2';
                         return Card(
+                          color: isEmulator ? Colors.amber[100] : null,
                           child: ListTile(
-                            title: Text('Game Host ${index + 1}'),
+                            title: Text(isEmulator ? 'Emulator Test Host' : 'Game Host ${index + 1}'),
                             subtitle: Text(_availableHosts[index]),
                             trailing: const Icon(Icons.videogame_asset),
                             onTap: () => _joinGame(_availableHosts[index]),

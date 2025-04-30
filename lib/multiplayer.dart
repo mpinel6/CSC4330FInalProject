@@ -17,6 +17,10 @@ class MultiplayerService {
   // Port to use for the connection
   final int _port = 8888;
   
+  // Track whether this instance is a host
+  bool _isHost = false;
+  bool get isHost => _isHost;
+  
   // Game data stream controller
   final _gameDataController = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get gameDataStream => _gameDataController.stream;
@@ -24,6 +28,11 @@ class MultiplayerService {
   // Connection status stream
   final _connectionStatusController = StreamController<String>.broadcast();
   Stream<String> get connectionStatus => _connectionStatusController.stream;
+  
+  // Game state stream for state manager
+  Stream<Map<String, dynamic>> get gameStateStream => gameDataStream.where(
+    (event) => event['type'] == 'game_state_update'
+  ).map((event) => event['data'] as Map<String, dynamic>);
   
   // Create a new game session as host
   Future<String> createGameSession() async {
@@ -35,6 +44,7 @@ class MultiplayerService {
       // Start the server
       _serverSocket = await ServerSocket.bind(InternetAddress.anyIPv4, _port);
       _connectionStatusController.add('Hosting game with code: $_sessionCode');
+      _isHost = true;
       
       // Listen for client connections
       _serverSocket!.listen((socket) {
@@ -53,6 +63,7 @@ class MultiplayerService {
     try {
       // Connect to the host
       final socket = await Socket.connect(hostIp, _port);
+      _isHost = false;
       
       // Send the code for verification
       socket.write(jsonEncode({
@@ -73,7 +84,8 @@ class MultiplayerService {
               _connectionStatusController.add('Failed to join: ${message['reason']}');
               socket.close();
             }
-          } else if (message['type'] == 'game_data') {
+          } else if (message['type'] == 'game_data' || 
+                     message['type'] == 'game_state_update') {
             _gameDataController.add(message);
           }
         },
@@ -122,7 +134,9 @@ class MultiplayerService {
             }));
           }
         } else if (message['type'] == 'game_action') {
-          // Forward game actions to all other clients
+          // Process game action and broadcast updated state
+          // This will be handled by the GameStateManager
+          _gameDataController.add(message);
           _broadcastGameAction(message, socket);
         }
       },
@@ -159,6 +173,39 @@ class MultiplayerService {
       if (client != sender) {
         client.write(actionMessage);
       }
+    }
+  }
+  
+  // Send a game action to the host (from a client)
+  void sendGameAction(String action, Map<String, dynamic> actionData) {
+    if (!_isHost) {
+      // Only clients should send actions to host
+      _connectedClients.first.write(jsonEncode({
+        'type': 'game_action',
+        'action': action,
+        'data': actionData
+      }));
+    }
+  }
+  
+  // Update and broadcast game state (from host)
+  void updateGameState(Map<String, dynamic> gameState) {
+    if (_isHost) {
+      // Only the host should broadcast state updates
+      final stateUpdate = jsonEncode({
+        'type': 'game_state_update',
+        'data': gameState
+      });
+      
+      for (final client in _connectedClients) {
+        client.write(stateUpdate);
+      }
+      
+      // Also update the host's own state
+      _gameDataController.add({
+        'type': 'game_state_update',
+        'data': gameState
+      });
     }
   }
   
