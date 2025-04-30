@@ -130,7 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: <Widget>[
-        const SizedBox(height: 100),
+        const SizedBox(height: 140),
         const Text(
           'Welcome to',
           style: TextStyle(
@@ -139,6 +139,46 @@ class _MyHomePageState extends State<MyHomePage> {
             fontFamily: 'Zubilo',
             fontWeight: FontWeight.bold,
             shadows: [
+              Shadow(
+                offset: Offset(-2, -2),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(2, -2),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(-2, 2),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(2, 2),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(0, -2),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(0, 2),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(-2, 0),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
+              Shadow(
+                offset: Offset(2, 0),
+                color: Colors.black,
+                blurRadius: 0,
+              ),
               Shadow(
                 offset: Offset(-1, -1),
                 color: Colors.black,
@@ -159,32 +199,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 color: Colors.black,
                 blurRadius: 0,
               ),
-              Shadow(
-                offset: Offset(0, -1),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(0, 1),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(-1, 0),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(1, 0),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
             ],
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 30),
-        const SizedBox(height: 340),
+        const SizedBox(height: 310),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -236,6 +256,46 @@ class _MyHomePageState extends State<MyHomePage> {
                     fontWeight: FontWeight.bold,
                     shadows: [
                       Shadow(
+                        offset: Offset(-2, -2),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(2, -2),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(-2, 2),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(2, 2),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(0, -2),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(0, 2),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(-2, 0),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
+                        offset: Offset(2, 0),
+                        color: Colors.black,
+                        blurRadius: 0,
+                      ),
+                      Shadow(
                         offset: Offset(-1, -1),
                         color: Colors.black,
                         blurRadius: 0,
@@ -252,26 +312,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       Shadow(
                         offset: Offset(1, 1),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(0, -1),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(0, 1),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(-1, 0),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(1, 0),
                         color: Colors.black,
                         blurRadius: 0,
                       ),
@@ -336,6 +376,28 @@ class _MyHomePageState extends State<MyHomePage> {
           color: Colors.white,
           fontFamily: 'Zubilo',
           fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(
+              offset: Offset(-1, -1),
+              color: Colors.black,
+              blurRadius: 0,
+            ),
+            Shadow(
+              offset: Offset(1, -1),
+              color: Colors.black,
+              blurRadius: 0,
+            ),
+            Shadow(
+              offset: Offset(-1, 1),
+              color: Colors.black,
+              blurRadius: 0,
+            ),
+            Shadow(
+              offset: Offset(1, 1),
+              color: Colors.black,
+              blurRadius: 0,
+            ),
+          ],
         ),
       ),
     );
