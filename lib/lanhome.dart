@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'rules_page.dart';
 import 'settings.dart';
 import 'matt_home_page.dart';
+import 'main.dart';
 
 class lanhome extends StatelessWidget {
   const lanhome({super.key});
@@ -48,7 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (index == 0) { // Home button index
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const matthomepage()),
+        MaterialPageRoute(builder: (context) => const MyApp()),
       );
     } else if (index == 1) { // Rules button index
       Navigator.push(

@@ -39,7 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _hasPressedLiar = false; 
   List<Map<String, dynamic>> _selectedCards = [];
   List<Map<String, dynamic>> _player2Cards = [];
-  String? _topLeftCard;
+  String? _topLeftCard; //this is the card used that the game should be played off of
   Map<String, bool> _cardSelections = {};
   Map<String, bool> _player2CardSelections = {};
   List<Map<String, dynamic>> _lastPlayedCards = [];
@@ -77,7 +77,7 @@ void _dealCards() {
       // the rng mechanic for the roulette
       _player1UsedNumbers = [];
       _player2UsedNumbers = [];
-      // each player has a random number that is defined at dealing that will be the reason they lose 
+      // each player has a random number that is defined at dealing that will be the reason they lose - taken out
       _player1LuckyNumber = random.nextInt(6) + 1;
       _player2LuckyNumber = random.nextInt(6) + 1;
 
@@ -108,10 +108,9 @@ void _dealCards() {
       _player2CardSelections = {for (var card in _player2Cards) '${card['id']}': false};
     });
   } else {
-    // out of cards
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Not enough cards left in the deck!'),
+        content: Text('error'),
         backgroundColor: Colors.brown,
       ),
     );
@@ -246,7 +245,7 @@ void _dealCards() {
       }
     });
   }
-
+// liar button, checks to see if cards match and makes sure someone has actually played a card
   void _checkLiar() {
     if (_lastPlayedCards.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -282,7 +281,7 @@ void _dealCards() {
         }
       }
     } else {
-      // If cards don't match (LIAR SHOULD DRINK), remove token from the other player
+  
       if (_isPlayer1Turn) {
         if (_player2Tokens > 0) {
           _player2Tokens -= 1;
@@ -294,6 +293,7 @@ void _dealCards() {
       }
     }
   });
+  //below was taken out or never used 
   String msg;
         if(_isPlayer1Turn){
             msg = "Player 1 TEST YOUR LUCK";
@@ -301,6 +301,7 @@ void _dealCards() {
                 else{
             msg = "Player 2 TEST YOUR LUCK";
             }
+
 //STOPED REFACTORING HERE
   
     void showTestYourLuck(bool isPlayer1) {
@@ -323,7 +324,12 @@ void _dealCards() {
                       rolledTxt = "Roll";
                     }
         
-      //this will be for the numbers that havent alr been rolled 
+      //this will be for the numbers that havent alr been rolled  also taken out
+
+
+
+
+
       List<int> availableNumbers = List.generate(6, (index) => index + 1)
           .where((num) => !rolledNumbers.contains(num))
           .toList();
@@ -420,17 +426,17 @@ void _dealCards() {
                           hasRolled = true;
                      
                           
-                          // Check if the rolled number matches the player's lucky number
+                          // Ctaken out, was here to check if they rolled bad 
                           if (sliderValue.round() == (isPlayer1 ? _player1LuckyNumber : _player2LuckyNumber)) {
                             setState(() {
                               if (isPlayer1) {
-                                _player1Tokens = _player1Tokens > 0 ? _player1Tokens - 1 : 0;
+                                
                               } else {
-                                _player2Tokens = _player2Tokens > 0 ? _player2Tokens - 1 : 0;
+                           
                               }
                             });
                             
-                            // Show losing message
+                            // display lost token on bad roll - taken out 
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
@@ -444,7 +450,7 @@ void _dealCards() {
                                     ),
                                   ),
                                   content: Text(
-                                    isPlayer1 ? 'Player 1 loses a token!' : 'Player 2 loses a token!',
+                                    ' ',
                                     style: const TextStyle(
                                       color: Colors.brown,
                                     ),
@@ -529,7 +535,7 @@ void _dealCards() {
         },
       );
     }
-    
+    // was here for the mechanic that was taken out - not needed anymore 
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -606,6 +612,7 @@ void _dealCards() {
     }
   }
 
+// below this will correctly check to make sure the liar button is correctly updated 
   @override
   Widget build(BuildContext context) {
         String liarbutton;
@@ -616,6 +623,28 @@ void _dealCards() {
       }else{
         liarbutton = "LIAR";
       }
+
+String buttonText;
+if (_isPlayer1Turn) {
+  if (_cardSelections.values.any((selected) => selected)) {
+    buttonText = 'Play Card(s)';
+  } else {
+    buttonText = 'Select Cards to Play';
+  }
+} else {
+  if (_player2CardSelections.values.any((selected) => selected)) {
+    buttonText = 'Play Card(s)';
+  } else {
+    buttonText = 'Select Cards to Play';
+  }
+}
+String displayTurn;
+if (_isPlayer1Turn) {
+  displayTurn = 'Player 1\'s Turn';
+} else {
+  displayTurn = 'Player 2\'s Turn';
+}
+
     return Scaffold(
       backgroundColor: Colors.brown[100],
       appBar: AppBar(
@@ -648,7 +677,7 @@ void _dealCards() {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        _isPlayer1Turn ? 'Player 1\'s Turn' : 'Player 2\'s Turn',
+                        displayTurn,
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -826,7 +855,7 @@ void _dealCards() {
                       children: [
                         ElevatedButton(
                           onPressed: () {
-                            // Check if any cards are selected for the current player
+                            // Make sure that cards are selected and can play the cards
                             bool hasSelectedCards = _isPlayer1Turn
                                 ? _cardSelections.values.any((selected) => selected)
                                 : _player2CardSelections.values.any((selected) => selected);
@@ -843,14 +872,9 @@ void _dealCards() {
                             ),
                             elevation: 6,
                           ),
+                          //corrrectly display on the button the correct text 
                           child: Text(
-                            _isPlayer1Turn
-                                ? (_cardSelections.values.any((selected) => selected)
-                                    ? 'Play Card(s)'
-                                    : 'Select Cards to Play')
-                                : (_player2CardSelections.values.any((selected) => selected)
-                                    ? 'Play Card(s)'
-                                    : 'Select Cards to Play'),
+                            buttonText,
                             style: const TextStyle(fontSize: 18, color: Colors.white),
                           ),
                         ),
@@ -873,6 +897,7 @@ void _dealCards() {
                       ],
                     ),
                   ],
+                  //checks to see if cards are delt and if not allow the user to do so 
                   if (!_hasDealt) ...[
                     ElevatedButton(
                       onPressed: _dealCards,
@@ -912,6 +937,7 @@ void _dealCards() {
               ),
             ),
           ),
+          //if we dont have a top card we need one and display it for play
           if (_topLeftCard != null)
             Positioned(
               top: 20,

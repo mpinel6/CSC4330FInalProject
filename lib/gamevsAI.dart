@@ -40,7 +40,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _hasPressedLiar = false; 
   List<Map<String, dynamic>> _selectedCards = [];
   List<Map<String, dynamic>> _player2Cards = [];
-  String? _topLeftCard;
+  String? _topLeftCard; //this is the card used that the game should be played off of
   Map<String, bool> _cardSelections = {};
   Map<String, bool> _player2CardSelections = {};
   List<Map<String, dynamic>> _lastPlayedCards = [];
@@ -83,7 +83,7 @@ void _dealCards() {
       // the rng mechanic for the roulette
       _player1UsedNumbers = [];
       _player2UsedNumbers = [];
-      // each player has a random number that is defined at dealing that will be the reason they lose 
+      // each player has a random number that is defined at dealing that will be the reason they lose - token taken out
       _player1LuckyNumber = random.nextInt(6) + 1;
       _player2LuckyNumber = random.nextInt(6) + 1;
 
@@ -114,16 +114,15 @@ void _dealCards() {
       _player2CardSelections = {for (var card in _player2Cards) '${card['id']}': false};
     });
   } else {
-    // out of cards
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Not enough cards left in the deck!'),
+        content: Text('error'),
         backgroundColor: Colors.brown,
       ),
     );
   }
 }
-
+// here we handle the turn for the cpu - either takes 1 or 2 and will either call liar or play a card based on which rng number given 
 void _cpuTurn(){
   if(_player2Cards.isNotEmpty){
     final randomMove = Random();
@@ -163,8 +162,8 @@ void _cpuTurn(){
         _selectedCards.removeWhere((card) => _cardSelections['${card['id']}'] == true);
         _cardSelections.clear();
       } 
-      // Switch turns 
-      _isPlayer1Turn = !_isPlayer1Turn;
+      // switch to cpu control and add a second delay so its not instant 
+      _isPlayer1Turn = false;
       if (!_isPlayer1Turn && _hasSecondPlayer) {
   Future.delayed(const Duration(seconds: 1), _cpuTurn);
 }
@@ -279,7 +278,7 @@ void _cpuTurn(){
       }
     });
   }
-
+// liar button, checks to see if cards match and makes sure someone has actually played a card
   void _checkLiar() {
     if (_lastPlayedCards.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -318,7 +317,7 @@ void _cpuTurn(){
         }
       }
     } else {
-      // If cards don't match (LIAR SHOULD DRINK), remove token from the other player
+      // If cards don't match  remove token from the other player
       if (_isPlayer1Turn) {
         if (_player2Tokens > 0) {
           _player2Tokens -= 1;
@@ -332,6 +331,7 @@ void _cpuTurn(){
       }
     }
   });
+   //below was taken out or never used 
   String msg;
         if(_isPlayer1Turn){
             msg = "Player 1 TEST YOUR LUCK";
@@ -361,7 +361,7 @@ void _cpuTurn(){
                       rolledTxt = "Roll";
                     }
         
-      //this will be for the numbers that havent alr been rolled 
+     //this will be for the numbers that havent alr been rolled  also taken out
       List<int> availableNumbers = List.generate(6, (index) => index + 1)
           .where((num) => !rolledNumbers.contains(num))
           .toList();
@@ -425,6 +425,7 @@ void _cpuTurn(){
                     ),
                     const SizedBox(height: 10),
                   
+
                     if ((isPlayer1 ? _player1UsedNumbers : _player2UsedNumbers).isNotEmpty) ...[
                       const SizedBox(height: 10),
                       Text(
@@ -447,18 +448,18 @@ void _cpuTurn(){
                           if (availableNumbers.isNotEmpty) {
                             int randomIndex = random.nextInt(availableNumbers.length);
                             sliderValue = availableNumbers[randomIndex].toDouble();
-                            // Add the rolled number to used numbers for the specific player
+                             // Ctaken out, was here to check if they rolled bad 
                             if (isPlayer1) {
-                              _player1UsedNumbers.add(sliderValue.round());
+                            
                             } else {
-                              _player2UsedNumbers.add(sliderValue.round());
+                              
                             }
                           }
 
                           hasRolled = true;
                      
                           
-                          // Check if the rolled number matches the player's lucky number
+                          //was here for token removal on roulette game
                           if (sliderValue.round() == (isPlayer1 ? _player1LuckyNumber : _player2LuckyNumber)) {
                             setState(() {
                               if (isPlayer1) {
@@ -468,7 +469,7 @@ void _cpuTurn(){
                               }
                             });
                             
-                            // Show losing message
+                           // display lost token on bad roll - taken out 
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
@@ -482,16 +483,16 @@ void _cpuTurn(){
                                     ),
                                   ),
                                   content: Text(
-                                    isPlayer1 ? 'Player 1 loses a token!' : 'Player 2 loses a token!',
+                                    ' ',
                                     style: const TextStyle(
                                       color: Colors.brown,
                                     ),
                                   ),
                                   actions: [
                                     TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop(); // Close the Bad Luck dialog
-                                        Navigator.of(context).pop(); // Close the Test Your Luck dialog
+                                      onPressed: () {// pop were for the pop ups to close them
+                                        Navigator.of(context).pop(); 
+                                        Navigator.of(context).pop();
                                         setState(() {
                                           // Reset game state
                                           _hasDealt = false;
@@ -584,11 +585,11 @@ void _cpuTurn(){
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // Show Test Your Luck for the player who should drink
+                // taken out roulette game
                 if (allCardsMatch) {
-                  //showTestYourLuck(_isPlayer1Turn);
+                 
                 } else {
-                  //showTestYourLuck(!_isPlayer1Turn);
+                 
                 }
               },
               child: const Text(
@@ -638,6 +639,31 @@ void _cpuTurn(){
       }else{
         liarbutton = "LIAR";
       }
+
+String pButtonText;
+if (_isPlayer1Turn) {
+  if (_cardSelections.values.any((selected) => selected)) {
+    pButtonText = 'Play Card(s)';
+  } else {
+    pButtonText = 'Select Cards to Play';
+  }
+} else {
+  if (_player2CardSelections.values.any((selected) => selected)) {
+    pButtonText = 'Play Card(s)';
+  } else {
+    pButtonText = 'Select Cards to Play';
+  }
+}
+String displayTurn;
+if (_isPlayer1Turn) {
+  displayTurn = 'Player 1\'s Turn';
+} else {
+  displayTurn = 'Player 2\'s Turn';
+}
+
+
+
+
     return Scaffold(
       backgroundColor: Colors.brown[100],
       appBar: AppBar(
@@ -670,7 +696,7 @@ void _cpuTurn(){
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        _isPlayer1Turn ? 'Player 1\'s Turn' : 'Player 2\'s Turn',
+                       displayTurn,
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -884,13 +910,7 @@ void _cpuTurn(){
                             elevation: 6,
                           ),
                           child: Text(
-                            _isPlayer1Turn
-                                ? (_cardSelections.values.any((selected) => selected)
-                                    ? 'Play Card(s)'
-                                    : 'Select Cards to Play')
-                                : (_player2CardSelections.values.any((selected) => selected)
-                                    ? 'Play Card(s)'
-                                    : 'Select Cards to Play'),
+                            pButtonText,
                             style: const TextStyle(fontSize: 18, color: Colors.white),
                           ),
                         ),
@@ -914,6 +934,7 @@ void _cpuTurn(){
                       ],
                     ),
                   ],
+                  //checks to see if cards are delt and if not allow the user to do so 
                   if (!_hasDealt) ...[
                     ElevatedButton(
                       onPressed: _dealCards,
@@ -953,6 +974,7 @@ void _cpuTurn(){
               ),
             ),
           ),
+          //if we dont have a top card we need one and display it for play
           if (_topLeftCard != null)
             Positioned(
               top: 20,
