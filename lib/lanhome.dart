@@ -83,14 +83,14 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 190.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
               const Text(
                 'Enter LAN Code To Join or Create Game',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 17,
                   fontWeight: FontWeight.bold,
                   color: Colors.brown,
                 ),
@@ -134,10 +134,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     child: const Text(
                       'Join Game',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
+                      style: TextStyle(fontSize: 15, color: Colors.white),
                     ),
                   ),
-                  const SizedBox(width: 20),
+                  const SizedBox(width: 12),
                   ElevatedButton(
                     onPressed: () {
                       // Handle create game logic here
@@ -152,7 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     child: const Text(
                       'Create Game',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
+                      style: TextStyle(fontSize: 15, color: Colors.white),
                     ),
                   ),
                 ],

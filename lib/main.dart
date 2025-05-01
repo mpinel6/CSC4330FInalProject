@@ -130,11 +130,11 @@ class _MyHomePageState extends State<MyHomePage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: <Widget>[
-        const SizedBox(height: 140),
+        const SizedBox(height: 70),
         const Text(
           'Welcome to',
           style: TextStyle(
-            fontSize: 45,
+            fontSize: 40,
             color: Colors.white,
             fontFamily: 'Zubilo',
             fontWeight: FontWeight.bold,
