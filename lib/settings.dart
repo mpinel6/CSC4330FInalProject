@@ -92,28 +92,28 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             const SizedBox(height: 30),
            ElevatedButton.icon(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const RulesPage()),
-    );
-  },
-  icon: const Icon(Icons.help_outline),
-  label: const Text(
-    'Help',
-    style: TextStyle(fontWeight: FontWeight.bold),
-  ),
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFFFFD700),
-    foregroundColor: Colors.black,
-    shadowColor: Colors.black,
-    elevation: 8,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-  ),
-),
+          onPressed: () {
+            Navigator.push(
+              context,
+                MaterialPageRoute(builder: (context) => const RulesPage()),
+              );
+            },
+          icon: const Icon(Icons.help_outline),
+            label: const Text(
+            'Help',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFFD700),
+              foregroundColor: Colors.black,
+              shadowColor: Colors.black,
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
+        ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () {
