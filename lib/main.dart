@@ -203,8 +203,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 30),
-        const SizedBox(height: 310),
+        const SizedBox(height: 275),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
