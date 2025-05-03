@@ -1,6 +1,7 @@
+import 'package:finalproj4330/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'rules_page.dart';
+import 'rules_page.dart'; 
 import 'settings.dart';
 import 'matt_home_page.dart';
 import 'dart:math';
@@ -189,7 +190,7 @@ void _dealCards() {
                         Navigator.of(context).pop();
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const matthomepage()),
+                          MaterialPageRoute(builder: (context) => const MyApp()),
                         );
                       },
                       child: const Text(
@@ -648,27 +649,31 @@ if (_isPlayer1Turn) {
 
     return Scaffold(
       backgroundColor: Colors.brown[100],
-      appBar: AppBar(
-        backgroundColor: Colors.brown[700],
-        elevation: 4,
-        title: Text(
-          widget.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: Colors.brown[700],
+      //   elevation: 4,
+      //   title: Text(
+      //     widget.title,
+      //     style: const TextStyle(
+      //       color: Colors.white,
+      //       fontWeight: FontWeight.bold,
+      //       letterSpacing: 1.2,
+      //     ),
+      //   ),
+      //   centerTitle: true,
+      // ),
       body: Stack(
         children: [
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
+              // child: Column(
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: <Widget>[
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
                   if (_hasDealt) ...[
                     // Turn indicator
                     Container(
@@ -680,7 +685,7 @@ if (_isPlayer1Turn) {
                       child: Text(
                         displayTurn,
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -691,8 +696,12 @@ if (_isPlayer1Turn) {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        
+
                         // Player 1's hand
                         Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -700,17 +709,18 @@ if (_isPlayer1Turn) {
                                 const Text(
                                   'Player 1 Hand:',
                                   style: TextStyle(
-                                    fontSize: 24,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.brown,
                                   ),
                                 ),
-                                const SizedBox(width: 10),
+                                const SizedBox(width: 5),
+                                
                                 Container(
-                                  padding: const EdgeInsets.all(8),
+                                  padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(10),
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.brown.withOpacity(0.3),
@@ -732,7 +742,7 @@ if (_isPlayer1Turn) {
                                       Text(
                                         '$_player1Tokens',
                                         style: const TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.brown,
                                         ),
@@ -742,36 +752,50 @@ if (_isPlayer1Turn) {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
-                            ..._selectedCards.map((card) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Checkbox(
-                                    value: _cardSelections['${card['id']}'] ?? false,
-                                    onChanged: _isPlayer1Turn ? (bool? value) {
-                                      setState(() {
-                                        _cardSelections['${card['id']}'] = value ?? false;
-                                      });
-                                    } : null,
-                                    activeColor: Colors.brown[700],
-                                  ),
-                                  Text(
-                                    card['value'],
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      color: Colors.brown,
-                                    ),
-                                  ),
-                                ],
+                            const SizedBox(height: 0),
+                             Expanded(
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  children: _selectedCards.map((card) {
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 0),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Checkbox(
+                                            value: _cardSelections['${card['id']}'] ?? false,
+                                            onChanged: _isPlayer1Turn
+                                                ? (bool? value) {
+                                                    setState(() {
+                                                      _cardSelections['${card['id']}'] = value ?? false;
+                                                    });
+                                                  }
+                                                : null,
+                                            activeColor: Colors.brown[700],
+                                          ),
+                                          Text(
+                                            card['value'],
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                              color: Colors.brown,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
                               ),
-                            )).toList(),
+                            ),
                           ],
                         ),
+
+
                         if (_hasSecondPlayer)
                           // Player 2's hand
                           Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -779,14 +803,14 @@ if (_isPlayer1Turn) {
                                   const Text(
                                     'Player 2 Hand:',
                                     style: TextStyle(
-                                      fontSize: 24,
+                                      fontSize: 20,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.brown,
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
+                                  const SizedBox(width: 5),
                                   Container(
-                                    padding: const EdgeInsets.all(8),
+                                    padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
@@ -811,7 +835,7 @@ if (_isPlayer1Turn) {
                                         Text(
                                           '$_player2Tokens',
                                           style: const TextStyle(
-                                            fontSize: 16,
+                                            fontSize: 15,
                                             fontWeight: FontWeight.bold,
                                             color: Colors.brown,
                                           ),
@@ -821,37 +845,49 @@ if (_isPlayer1Turn) {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 10),
-                              ..._player2Cards.map((card) => Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Checkbox(
-                                      value: _player2CardSelections['${card['id']}'] ?? false,
-                                      onChanged: !_isPlayer1Turn ? (bool? value) {
-                                        setState(() {
-                                          _player2CardSelections['${card['id']}'] = value ?? false;
-                                        });
-                                      } : null,
-                                      activeColor: Colors.brown[700],
-                                    ),
-                                    Text(
-                                      card['value'],
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        color: Colors.brown,
-                                      ),
-                                    ),
-                                  ],
+                              const SizedBox(height: 0),
+                               Expanded(
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    children: _selectedCards.map((card) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 0),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Checkbox(
+                                              value: _cardSelections['${card['id']}'] ?? false,
+                                              onChanged: _isPlayer1Turn
+                                                  ? (bool? value) {
+                                                      setState(() {
+                                                        _cardSelections['${card['id']}'] = value ?? false;
+                                                      });
+                                                    }
+                                                  : null,
+                                              activeColor: Colors.brown[700],
+                                            ),
+                                            Text(
+                                              card['value'],
+                                              style: const TextStyle(
+                                                fontSize: 20,
+                                                color: Colors.brown,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
                                 ),
-                              )).toList(),
+                              ),
+                              // ────────────────────── end of addition ──────────────────────
                             ],
                           ),
+
                       ],
                     ),
                     const SizedBox(height: 20),
-                    Row(
+                    Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ElevatedButton(
@@ -867,7 +903,7 @@ if (_isPlayer1Turn) {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.brown[700],
-                            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -876,7 +912,7 @@ if (_isPlayer1Turn) {
                           //corrrectly display on the button the correct text 
                           child: Text(
                             buttonText,
-                            style: const TextStyle(fontSize: 18, color: Colors.white),
+                            style: const TextStyle(fontSize: 15, color: Colors.white),
                           ),
                         ),
                         const SizedBox(width: 20),
@@ -884,7 +920,7 @@ if (_isPlayer1Turn) {
                           onPressed: _hasPressedLiar ? null : _checkLiar,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _hasPressedLiar ? Colors.grey : Colors.red[700],
-                            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -892,7 +928,7 @@ if (_isPlayer1Turn) {
                           ),
                           child: Text(
                             liarbutton,
-                            style: const TextStyle(fontSize: 18, color: Colors.white),
+                            style: const TextStyle(fontSize: 16, color: Colors.white),
                           ),
                         ),
                       ],
@@ -904,7 +940,7 @@ if (_isPlayer1Turn) {
                       onPressed: _dealCards,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.brown[700],
-                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -912,7 +948,7 @@ if (_isPlayer1Turn) {
                       ),
                       child: const Text(
                         'Deal Cards',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                        style: TextStyle(fontSize: 16, color: Colors.white),
                       ),
                     ),
                     if (!_hasSecondPlayer) ...[
@@ -921,7 +957,7 @@ if (_isPlayer1Turn) {
                         onPressed: _addSecondPlayer,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.brown[700],
-                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -929,7 +965,7 @@ if (_isPlayer1Turn) {
                         ),
                         child: const Text(
                           'Add Player 2',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
+                          style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
                       ),
                     ],

@@ -130,7 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: <Widget>[
-        const SizedBox(height: 70),
+        const SizedBox(height: 90),
         const Text(
           'Welcome to',
           style: TextStyle(
@@ -203,7 +203,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 275),
+        const SizedBox(height: 320),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -362,7 +362,7 @@ class _MyHomePageState extends State<MyHomePage> {
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.brown[700],
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
