@@ -358,250 +358,56 @@ class _MyHomePageState extends State<MyHomePage> {
           }
         }
       }
-    });
-    //below was taken out or never used
-    String msg;
-    if (_isPlayer1Turn) {
-      msg = "Player 1 TEST YOUR LUCK";
-    } else {
-      msg = "Player 2 TEST YOUR LUCK";
-    }
-//STOPED REFACTORING HERE
 
-    void showTestYourLuck(bool isPlayer1) {
-      double sliderValue = 1;
-      bool hasRolled = false;
-      final random = Random();
-
-      List<int> rolledNumbers;
-      if (isPlayer1) {
-        rolledNumbers = _player1UsedNumbers;
-      } else {
-        rolledNumbers = _player2UsedNumbers;
-      }
-
-      String rolledTxt;
-      if (hasRolled) {
-        rolledTxt = "Rolled";
-      } else {
-        rolledTxt = "Roll";
-      }
-
-      //this will be for the numbers that havent alr been rolled  also taken out
-      List<int> availableNumbers = List.generate(6, (index) => index + 1)
-          .where((num) => !rolledNumbers.contains(num))
-          .toList();
-
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return StatefulBuilder(
-            builder: (context, setDialogState) {
-              return AlertDialog(
-                backgroundColor: Colors.brown[100],
-                contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                title: const Center(
-                  child: Text(
-                    'Test Your Luck!',
-                    style: TextStyle(
-                      color: Colors.brown,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                    ),
+      // Check for win condition after token removal
+      if (_player2Tokens == 0) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: Colors.brown[100],
+              contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+              actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              title: const Center(
+                child: Text(
+                  'Game Complete!',
+                  style: TextStyle(
+                    color: Colors.brown,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
                   ),
                 ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
+              ),
+              content: const Center(
+                child: Text(
+                  'Player 1 wins!',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.brown,
+                  ),
+                ),
+              ),
+              actionsAlignment: MainAxisAlignment.center,
+              actions: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      msg,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Colors.brown,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Slider(
-                      value: sliderValue,
-                      min: 1,
-                      max: 6,
-                      divisions: 5,
-                      label: sliderValue.round().toString(),
-                      onChanged: hasRolled
-                          ? null
-                          : (value) {
-                              setDialogState(() {
-                                sliderValue = value;
-                              });
-                            },
-                      activeColor: Colors.brown[700],
-                    ),
-                    Text(
-                      '${sliderValue.round()}',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.brown,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    if ((isPlayer1 ? _player1UsedNumbers : _player2UsedNumbers)
-                        .isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        'Used Numbers: ${(isPlayer1 ? _player1UsedNumbers : _player2UsedNumbers).join(", ")}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.brown,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                actions: [
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: hasRolled
-                          ? null
-                          : () {
-                              setDialogState(() {
-                                // Only roll from available numbers
-                                if (availableNumbers.isNotEmpty) {
-                                  int randomIndex =
-                                      random.nextInt(availableNumbers.length);
-                                  sliderValue =
-                                      availableNumbers[randomIndex].toDouble();
-                                  // Ctaken out, was here to check if they rolled bad
-                                  if (isPlayer1) {
-                                  } else {}
-                                }
-
-                                hasRolled = true;
-
-                                //was here for token removal on roulette game
-                                if (sliderValue.round() ==
-                                    (isPlayer1
-                                        ? _player1LuckyNumber
-                                        : _player2LuckyNumber)) {
-                                  setState(() {
-                                    if (isPlayer1) {
-                                      _player1Tokens = _player1Tokens > 0
-                                          ? _player1Tokens - 1
-                                          : 0;
-                                    } else {
-                                      _player2Tokens = _player2Tokens > 0
-                                          ? _player2Tokens - 1
-                                          : 0;
-                                    }
-                                  });
-
-                                  // display lost token on bad roll - taken out
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        backgroundColor: Colors.brown[100],
-                                        title: const Text(
-                                          'Bad Luck!',
-                                          style: TextStyle(
-                                            color: Colors.brown,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        content: Text(
-                                          ' ',
-                                          style: const TextStyle(
-                                            color: Colors.brown,
-                                          ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              // pop were for the pop ups to close them
-                                              Navigator.of(context).pop();
-                                              Navigator.of(context).pop();
-                                              setState(() {
-                                                // Reset game state
-                                                _hasDealt = false;
-                                                _hasSecondPlayer = false;
-                                                _isPlayer1Turn = true;
-                                                _selectedCards = [];
-                                                _player2Cards = [];
-                                                _topLeftCard = null;
-                                                _cardSelections = {};
-                                                _player2CardSelections = {};
-                                                _lastPlayedCards = [];
-                                                _player1Tokens = 3;
-                                                _player2Tokens = 3;
-                                                _player1UsedNumbers = [];
-                                                _player2UsedNumbers = [];
-                                                _deck = [
-                                                  'Ace',
-                                                  'Ace',
-                                                  'Ace',
-                                                  'Ace',
-                                                  'Ace',
-                                                  'Ace',
-                                                  'King',
-                                                  'King',
-                                                  'King',
-                                                  'King',
-                                                  'King',
-                                                  'King',
-                                                  'Queen',
-                                                  'Queen',
-                                                  'Queen',
-                                                  'Queen',
-                                                  'Queen',
-                                                  'Queen',
-                                                  'Joker',
-                                                  'Joker'
-                                                ];
-                                              });
-                                            },
-                                            child: const Text(
-                                              'Restart Game',
-                                              style: TextStyle(
-                                                color: Colors.brown,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                }
-                              });
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.brown[700],
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 12),
-                      ),
-                      child: Text(
-                        rolledTxt,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Center(
-                    child: TextButton(
+                    TextButton(
                       onPressed: () {
                         Navigator.of(context).pop();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const MyApp()),
+                        );
                       },
                       child: const Text(
-                        'Close',
+                        'Go Home',
                         style: TextStyle(
                           color: Colors.brown,
                           fontWeight: FontWeight.bold,
@@ -609,14 +415,66 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-      );
-    }
+                    const SizedBox(width: 20),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        setState(() {
+                          // Reset game state
+                          _hasDealt = false;
+                          _hasSecondPlayer = true;
+                          _isPlayer1Turn = true;
+                          _selectedCards = [];
+                          _player2Cards = [];
+                          _topLeftCard = null;
+                          _cardSelections = {};
+                          _player2CardSelections = {};
+                          _lastPlayedCards = [];
+                          _player1Tokens = 3;
+                          _player2Tokens = 3;
+                          _player1UsedNumbers = [];
+                          _player2UsedNumbers = [];
+                          _deck = [
+                            'Ace',
+                            'Ace',
+                            'Ace',
+                            'Ace',
+                            'Ace',
+                            'Ace',
+                            'King',
+                            'King',
+                            'King',
+                            'King',
+                            'King',
+                            'King',
+                            'Queen',
+                            'Queen',
+                            'Queen',
+                            'Queen',
+                            'Queen',
+                            'Queen',
+                            'Joker',
+                            'Joker'
+                          ];
+                        });
+                      },
+                      child: const Text(
+                        'Play Again',
+                        style: TextStyle(
+                          color: Colors.brown,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        );
+      }
+    });
 
     showDialog(
       context: context,
@@ -721,53 +579,399 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         child: Stack(
           children: [
-            // Add hamburger menu button
-            Positioned(
-              top: 40,
-              right: 20,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.brown[700],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    _isNavBarVisible ? Icons.menu : Icons.menu_open,
-                    color: Colors.white,
+            // Table and middle sprite - Fixed position
+            Positioned.fill(
+              child: Stack(
+                children: [
+                  // Table
+                  Positioned(
+                    bottom: -MediaQuery.of(context).size.height * 1,
+                    left: 0,
+                    right: 0,
+                    child: Image.asset(
+                      'assets/images/tableasset.png',
+                      fit: BoxFit.contain,
+                      width: MediaQuery.of(context).size.width * 1.4,
+                      height: MediaQuery.of(context).size.height * 1.2,
+                    ),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _isNavBarVisible = !_isNavBarVisible;
-                    });
-                  },
-                ),
+                  // Middle sprite
+                  Positioned(
+                    top: MediaQuery.of(context).size.height *
+                        0.1, // Add top offset
+                    left: 0,
+                    right: 0,
+                    child: Image.asset(
+                      'assets/images/middlesprite.png',
+                      fit: BoxFit.contain,
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      height: MediaQuery.of(context).size.height * 0.7,
+                    ),
+                  ),
+                ],
               ),
             ),
-            // Turn indicator at the top
-            if (_hasDealt)
-              Positioned(
-                top: 40,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.brown[700],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      displayTurn,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+            // Game UI elements
+            Column(
+              children: [
+                // Top section with hamburger and token
+                Padding(
+                  padding: const EdgeInsets.only(top: 10, right: 20, left: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (_hasDealt && _topLeftCard != null)
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.brown.withOpacity(0.3),
+                                spreadRadius: 2,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.asset(
+                                'assets/images/${_topLeftCard!.toLowerCase()}.jpg',
+                                width: 40,
+                                height: 60,
+                                fit: BoxFit.contain,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Play: $_topLeftCard',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.brown,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_hasDealt)
+                            Text(
+                              displayTurn,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.brown,
+                              ),
+                            ),
+                          const SizedBox(width: 20),
+                          if (_hasDealt)
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.brown.withOpacity(0.3),
+                                    spreadRadius: 2,
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.stars,
+                                    color: Colors.brown,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$_player1Tokens',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.brown,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          const SizedBox(width: 20),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.brown[700],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                _isNavBarVisible ? Icons.menu : Icons.menu_open,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isNavBarVisible = !_isNavBarVisible;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Main game content
+                Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          if (_hasDealt) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (_hasSecondPlayer)
+                                  // Player 2's hand
+                                  Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Text(
+                                            'Player 2 Hand:',
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.brown,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.brown
+                                                      .withOpacity(0.3),
+                                                  spreadRadius: 2,
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.stars,
+                                                  color: Colors.brown,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '$_player2Tokens',
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.brown,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: _isPlayer1Turn
+                                      ? () {
+                                          bool hasSelectedCards = _isPlayer1Turn
+                                              ? _cardSelections.values
+                                                  .any((selected) => selected)
+                                              : _player2CardSelections.values
+                                                  .any((selected) => selected);
+
+                                          if (hasSelectedCards) {
+                                            _playSelectedCards();
+                                          }
+                                        }
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.brown[700],
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 40, vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    elevation: 6,
+                                  ),
+                                  child: Text(
+                                    pButtonText,
+                                    style: const TextStyle(
+                                        fontSize: 18, color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          if (!_hasDealt) ...[
+                            ElevatedButton(
+                              onPressed: _dealCards,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.brown[700],
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 40, vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 6,
+                              ),
+                              child: const Text(
+                                'Deal Cards',
+                                style: TextStyle(
+                                    fontSize: 18, color: Colors.white),
+                              ),
+                            ),
+                            if (!_hasSecondPlayer) ...[
+                              const SizedBox(height: 20),
+                              ElevatedButton(
+                                onPressed: _addSecondPlayer,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.brown[700],
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 40, vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 6,
+                                ),
+                                child: const Text(
+                                  'Add Player 2',
+                                  style: TextStyle(
+                                      fontSize: 18, color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ],
                       ),
                     ),
                   ),
                 ),
-              ),
+                // Card hand display
+                if (_hasDealt)
+                  Container(
+                    height: 160,
+                    width: MediaQuery.of(context).size.width - 40,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _isPlayer1Turn
+                            ? _selectedCards.length
+                            : _player2Cards.length,
+                        itemBuilder: (context, index) {
+                          final cards =
+                              _isPlayer1Turn ? _selectedCards : _player2Cards;
+                          final card = cards[index];
+                          final isSelected = _isPlayer1Turn
+                              ? _cardSelections['${card['id']}'] ?? false
+                              : _player2CardSelections['${card['id']}'] ??
+                                  false;
+
+                          // Calculate rotation angle based on position
+                          final totalCards = cards.length;
+                          final maxRotation =
+                              0.2; // Maximum rotation in radians
+                          final rotationStep = totalCards > 1
+                              ? (maxRotation * 2) / (totalCards - 1)
+                              : 0.0;
+                          final rotation = totalCards > 1
+                              ? -maxRotation + (rotationStep * index)
+                              : 0.0;
+
+                          // Calculate vertical offset for curved effect
+                          final centerIndex = (totalCards - 1) / 2;
+                          final verticalOffset = totalCards > 1
+                              ? 10.0 *
+                                  (index - centerIndex)
+                                      .abs() // middle cards are lower
+                              : 0.0;
+
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_isPlayer1Turn) {
+                                  _cardSelections['${card['id']}'] =
+                                      !isSelected;
+                                } else {
+                                  _player2CardSelections['${card['id']}'] =
+                                      !isSelected;
+                                }
+                              });
+                            },
+                            child: Transform.translate(
+                              offset: Offset(0, verticalOffset),
+                              child: Transform.rotate(
+                                angle: rotation,
+                                child: Container(
+                                  width: 80, // slightly smaller width
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 2), // small positive margin
+                                  child: Stack(
+                                    children: [
+                                      Center(
+                                        child: Image.asset(
+                                          'assets/images/${card['value'].toLowerCase()}.jpg',
+                                          width: 80,
+                                          height: 120,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                      if (isSelected)
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Colors.brown.withOpacity(0.3),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             // Liar button at bottom right
             if (_hasDealt)
               Positioned(
@@ -792,376 +996,36 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
               ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0, vertical: 40.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    if (_hasDealt) ...[
-                      const SizedBox(
-                          height: 60), // Add space for the turn indicator
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Player 1's hand
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text(
-                                    'Player 1 Hand:',
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.brown,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.brown.withOpacity(0.3),
-                                          spreadRadius: 2,
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.stars,
-                                          color: Colors.brown,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '$_player1Tokens',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.brown,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          if (_hasSecondPlayer)
-                            // Player 2's hand
-                            Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text(
-                                      'Player 2 Hand:',
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.brown,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(8),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color:
-                                                Colors.brown.withOpacity(0.3),
-                                            spreadRadius: 2,
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.stars,
-                                            color: Colors.brown,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '$_player2Tokens',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.brown,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton(
-                            onPressed: _isPlayer1Turn
-                                ? () {
-                                    bool hasSelectedCards = _isPlayer1Turn
-                                        ? _cardSelections.values
-                                            .any((selected) => selected)
-                                        : _player2CardSelections.values
-                                            .any((selected) => selected);
-
-                                    if (hasSelectedCards) {
-                                      _playSelectedCards();
-                                    }
-                                  }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.brown[700],
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 40, vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 6,
-                            ),
-                            child: Text(
-                              pButtonText,
-                              style: const TextStyle(
-                                  fontSize: 18, color: Colors.white),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (!_hasDealt) ...[
-                      ElevatedButton(
-                        onPressed: _dealCards,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.brown[700],
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 40, vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 6,
-                        ),
-                        child: const Text(
-                          'Deal Cards',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
-                      ),
-                      if (!_hasSecondPlayer) ...[
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _addSecondPlayer,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.brown[700],
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 6,
-                          ),
-                          child: const Text(
-                            'Add Player 2',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            // Card hand display at bottom right
-            if (_hasDealt)
-              Positioned(
-                bottom: 30,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    height: 160,
-                    width: MediaQuery.of(context).size.width - 40,
-                    child: Align(
-                      alignment: Alignment.center,
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _isPlayer1Turn
-                            ? _selectedCards.length
-                            : _player2Cards.length,
-                        itemBuilder: (context, index) {
-                          final cards =
-                              _isPlayer1Turn ? _selectedCards : _player2Cards;
-                          final card = cards[index];
-                          final isSelected = _isPlayer1Turn
-                              ? _cardSelections['${card['id']}'] ?? false
-                              : _player2CardSelections['${card['id']}'] ??
-                                  false;
-
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (_isPlayer1Turn) {
-                                  _cardSelections['${card['id']}'] =
-                                      !isSelected;
-                                } else {
-                                  _player2CardSelections['${card['id']}'] =
-                                      !isSelected;
-                                }
-                              });
-                            },
-                            child: Container(
-                              width: 120,
-                              margin: const EdgeInsets.symmetric(horizontal: 2),
-                              child: Stack(
-                                children: [
-                                  Center(
-                                    child: Image.asset(
-                                      'assets/images/${card['value'].toLowerCase()}.jpg',
-                                      width: 110,
-                                      height: 150,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                  if (isSelected)
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.brown.withOpacity(0.3),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            //if we dont have a top card we need one and display it for play
-            if (_topLeftCard != null)
-              Positioned(
-                top: 20,
-                left: 20,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.brown.withOpacity(0.3),
-                        spreadRadius: 2,
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    _topLeftCard!,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.brown,
-                    ),
-                  ),
-                ),
-              ),
-            Positioned(
-              top: 20,
-              right: 20,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.brown.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.stars,
-                      color: Colors.brown,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$_player1Tokens',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.brown,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ],
         ),
       ),
       bottomNavigationBar: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        transform: Matrix4.translationValues(
-          0,
-          _isNavBarVisible ? 0 : 100,
-          0,
-        ),
-        child: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.book),
-              label: 'Rules',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: 'Settings',
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.brown[700],
-          backgroundColor: Colors.brown[200],
-          onTap: _onItemTapped,
+        height: _isNavBarVisible ? kBottomNavigationBarHeight : 0,
+        child: SingleChildScrollView(
+          child: BottomNavigationBar(
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.book),
+                label: 'Rules',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.settings),
+                label: 'Settings',
+              ),
+            ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: Colors.brown[700],
+            backgroundColor: Colors.brown[200],
+            onTap: _onItemTapped,
+          ),
         ),
       ),
-      extendBody: true,
     );
   }
 }
