@@ -1,51 +1,33 @@
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 
 class AudioManager {
   static final AudioManager _instance = AudioManager._internal();
 
-  factory AudioManager() {
-    return _instance;
-  }
+  factory AudioManager() => _instance;
+
+  late final AudioPlayer _player;
+  bool _isInitialized = false;
 
   AudioManager._internal();
 
-  final AudioPlayer _musicPlayer = AudioPlayer();
-  final AudioPlayer _fxPlayer = AudioPlayer();
+  Future<void> playMusic(String assetPath) async {
+    if (!_isInitialized) {
+      _player = AudioPlayer();
+      _isInitialized = true;
+    }
 
-  double _musicVolume = 0.5;
-  double _fxVolume = 0.5;
-
-  Future<void> playMusic(String path) async {
-    await _musicPlayer.setReleaseMode(ReleaseMode.loop);
-    await _musicPlayer.play(AssetSource(path), volume: _musicVolume);
+    try {
+      await _player.setAsset(assetPath);
+      _player.setLoopMode(LoopMode.all);
+      _player.play();
+    } catch (e) {
+      print("Error playing music: $e");
+    }
   }
 
   Future<void> stopMusic() async {
-    await _musicPlayer.stop();
+    if (_isInitialized) {
+      await _player.stop();
+    }
   }
-
-  Future<void> pauseMusic() async {
-    await _musicPlayer.pause();
-  }
-
-  Future<void> resumeMusic() async {
-    await _musicPlayer.resume();
-  }
-
-  Future<void> playFx(String path) async {
-    await _fxPlayer.play(AssetSource(path), volume: _fxVolume);
-  }
-
-  void setMusicVolume(double volume) {
-    _musicVolume = volume;
-    _musicPlayer.setVolume(volume);
-  }
-
-  void setFxVolume(double volume) {
-    _fxVolume = volume;
-    // FX volume is used at play time
-  }
-
-  double get musicVolume => _musicVolume;
-  double get fxVolume => _fxVolume;
 }
