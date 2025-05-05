@@ -1,49 +1,108 @@
 import 'package:flutter/material.dart';
+import "settings.dart";
 //hunter todd
 //kollin bassie
 
-class RulesPage extends StatelessWidget {
+class RulesPage extends StatefulWidget {
   const RulesPage({super.key});
+
+  @override
+  State<RulesPage> createState() => _RulesPageState();
+}
+
+class _RulesPageState extends State<RulesPage> {
+  int _selectedIndex = 1; // Rules tab
+
+  void _onItemTapped(int index) {
+    if (index == 0) {
+      // Go to Home, pop until root
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } else if (index == 1) {
+      // Already on Rules, do nothing
+    } else if (index == 2) {
+      // Go to Settings, replace current page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const SettingsPage()),
+      );
+    }
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Joker's Joint Rules"),
-        backgroundColor: Colors.brown[700],
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          "Joker's Joint Rules",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Zubilo',
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            shadows: [
+              Shadow(offset: Offset(-2, -2), color: Colors.black),
+              Shadow(offset: Offset(2, -2), color: Colors.black),
+              Shadow(offset: Offset(-2, 2), color: Colors.black),
+              Shadow(offset: Offset(2, 2), color: Colors.black),
+              Shadow(offset: Offset(0, -2), color: Colors.black),
+              Shadow(offset: Offset(0, 2), color: Colors.black),
+              Shadow(offset: Offset(-2, 0), color: Colors.black),
+              Shadow(offset: Offset(2, 0), color: Colors.black),
+              Shadow(offset: Offset(-1, -1), color: Colors.black),
+              Shadow(offset: Offset(1, -1), color: Colors.black),
+              Shadow(offset: Offset(-1, 1), color: Colors.black),
+              Shadow(offset: Offset(1, 1), color: Colors.black),
+            ],
+          ),
+        ),
+        backgroundColor: const Color.fromARGB(255, 49, 49, 49),
+        centerTitle: true,
       ),
-      backgroundColor: Colors.brown[100],
+      backgroundColor: const Color.fromARGB(255, 161, 159, 159),
       body: const RulesLayout(),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.book),
+            label: 'Rules',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: const Color(0xFF232323), // darker gray for selected
+        unselectedItemColor:
+            const Color(0xFFB0B0B0), // lighter gray for unselected
+        backgroundColor: const Color(0xFFD6D6D6),
+        onTap: _onItemTapped,
+      ),
     );
   }
 }
 
 // Add this global key to access the RulesContent state
-final GlobalKey<RulesContentState> rulesContentKey = GlobalKey<RulesContentState>();
+final GlobalKey<RulesContentState> rulesContentKey =
+    GlobalKey<RulesContentState>();
 
 class RulesLayout extends StatelessWidget {
   const RulesLayout({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Main content area - now takes full width
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-            // Pass the global key to RulesContent
-            child: RulesContent(key: rulesContentKey),
-          ),
-        ),
-        
-        // Bottom navigation bar
-        Container(
-          color: Colors.brown[200],
-          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
-          child: const RulesNavigation(),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: RulesContent(key: rulesContentKey),
     );
   }
 }
@@ -60,31 +119,31 @@ class RulesNavigation extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           RulesSectionButton(
-            title: "Overview", 
+            title: "Overview",
             index: 0,
             onPressed: () => rulesContentKey.currentState?.scrollToSection(0),
           ),
           const SizedBox(width: 10),
           RulesSectionButton(
-            title: "Setup", 
+            title: "Setup",
             index: 1,
             onPressed: () => rulesContentKey.currentState?.scrollToSection(1),
           ),
           const SizedBox(width: 10),
           RulesSectionButton(
-            title: "Gameplay", 
+            title: "Gameplay",
             index: 2,
             onPressed: () => rulesContentKey.currentState?.scrollToSection(2),
           ),
           const SizedBox(width: 10),
           RulesSectionButton(
-            title: "Lives", 
+            title: "Lives",
             index: 3,
             onPressed: () => rulesContentKey.currentState?.scrollToSection(3),
           ),
           const SizedBox(width: 10),
           RulesSectionButton(
-            title: "Special Rules", 
+            title: "Special Rules",
             index: 4,
             onPressed: () => rulesContentKey.currentState?.scrollToSection(4),
           ),
@@ -116,8 +175,8 @@ class RulesSectionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.brown[400],
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.brown[50],
+        foregroundColor: Colors.black,
         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0),
@@ -126,7 +185,10 @@ class RulesSectionButton extends StatelessWidget {
       onPressed: onPressed,
       child: Text(
         title,
-        style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          fontSize: 16.0,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -134,7 +196,7 @@ class RulesSectionButton extends StatelessWidget {
 
 class RulesContent extends StatefulWidget {
   const RulesContent({super.key});
-  
+
   @override
   State<RulesContent> createState() => RulesContentState();
 }
@@ -143,7 +205,7 @@ class RulesContentState extends State<RulesContent> {
   final ScrollController _scrollController = ScrollController();
   final List<GlobalKey> _sectionKeys = List.generate(5, (_) => GlobalKey());
   bool _showBackToTop = false; // Track whether to show back to top button
-  
+
   @override
   void initState() {
     super.initState();
@@ -160,7 +222,7 @@ class RulesContentState extends State<RulesContent> {
       }
     });
   }
-  
+
   void scrollToSection(int index) {
     if (index < _sectionKeys.length) {
       final context = _sectionKeys[index].currentContext;
@@ -173,7 +235,7 @@ class RulesContentState extends State<RulesContent> {
       }
     }
   }
-  
+
   // Add method to scroll back to top
   void _scrollToTop() {
     _scrollController.animateTo(
@@ -199,7 +261,8 @@ class RulesContentState extends State<RulesContent> {
             RulesSection(
               key: _sectionKeys[0],
               title: "Game Overview",
-              content: "Welcome to Joker's Joint, where bluffing is an art and deception pays! "
+              content:
+                  "Welcome to Joker's Joint, where bluffing is an art and deception pays! "
                   "In this retro-styled game of strategy and deceit, players take on the role of card sharks "
                   "trying to outwit each other through masterful bluffing and keen observation.\n\n"
                   "The objective is to be the last player standing by protecting your lives while "
@@ -250,7 +313,8 @@ class RulesContentState extends State<RulesContent> {
             RulesSection(
               key: _sectionKeys[4],
               title: "Special Rules",
-              content: "• Joker's Rule: Jokers are wild cards and can be played as any card type (Ace, King, or Queen)\n"
+              content:
+                  "• Joker's Rule: Jokers are wild cards and can be played as any card type (Ace, King, or Queen)\n"
                   "• Final Countdown: When the deck runs out, everyone gets one last turn to try to eliminate opponents\n"
                   "• Bluff Master: If you successfully make 3 bluffs in a row without being challenged, you gain an extra life (max 3)\n"
                   "• Card Counter: You may look through the discard pile once per round",
@@ -260,16 +324,17 @@ class RulesContentState extends State<RulesContent> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.brown[700]!, width: 2),
+                  border: Border.all(
+                      color: const Color.fromARGB(255, 49, 49, 49), width: 2),
                   borderRadius: BorderRadius.circular(8),
-                  color: Colors.amber[50],
+                  color: Colors.white,
                 ),
                 child: const Text(
                   "Remember, at Joker's Joint, it's not whether you win or lose... it's how well you deceive!",
                   style: TextStyle(
                     fontSize: 18,
                     fontStyle: FontStyle.italic,
-                    color: Colors.brown,
+                    color: Color.fromARGB(255, 49, 49, 49),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -285,7 +350,7 @@ class RulesContentState extends State<RulesContent> {
           bottom: _showBackToTop ? 20 : -60,
           right: 20,
           child: FloatingActionButton(
-            backgroundColor: Colors.brown[700],
+            backgroundColor: const Color.fromARGB(255, 49, 49, 49),
             onPressed: _scrollToTop,
             mini: true,
             tooltip: 'Back to top',
@@ -315,7 +380,7 @@ class RulesSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
           decoration: BoxDecoration(
-            color: Colors.brown[700],
+            color: const Color.fromARGB(255, 49, 49, 49),
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(8.0),
               topRight: Radius.circular(8.0),
@@ -324,9 +389,24 @@ class RulesSection extends StatelessWidget {
           child: Text(
             title,
             style: const TextStyle(
+              fontFamily: 'Zubilo',
               fontSize: 24.0,
               fontWeight: FontWeight.bold,
               color: Colors.white,
+              shadows: [
+                Shadow(offset: Offset(-2, -2), color: Colors.black),
+                Shadow(offset: Offset(2, -2), color: Colors.black),
+                Shadow(offset: Offset(-2, 2), color: Colors.black),
+                Shadow(offset: Offset(2, 2), color: Colors.black),
+                Shadow(offset: Offset(0, -2), color: Colors.black),
+                Shadow(offset: Offset(0, 2), color: Colors.black),
+                Shadow(offset: Offset(-2, 0), color: Colors.black),
+                Shadow(offset: Offset(2, 0), color: Colors.black),
+                Shadow(offset: Offset(-1, -1), color: Colors.black),
+                Shadow(offset: Offset(1, -1), color: Colors.black),
+                Shadow(offset: Offset(-1, 1), color: Colors.black),
+                Shadow(offset: Offset(1, 1), color: Colors.black),
+              ],
             ),
           ),
         ),

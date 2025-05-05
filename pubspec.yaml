@@ -36,7 +36,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   audioplayers: ^6.0.0
-  just_audio: ^0.9.18  
+  just_audio: ^0.9.18
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +72,7 @@ flutter:
     - assets/images/queen.jpg
     - assets/images/back.jpg
     - assets/images/backgroundimage.png
+    - assets/images/Logo.png
     - assets/Music/BG_Music.mp3
     - assets/Music/CardDownSfx.mp3
 
