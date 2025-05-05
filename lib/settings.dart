@@ -17,14 +17,35 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF6F4E37), // Brownish background
+      backgroundColor: const Color.fromARGB(255, 161, 159, 159),
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: const Color.fromARGB(255, 49, 49, 49),
+        centerTitle: true,
         title: const Text(
           'Settings',
-          style: TextStyle(color: Colors.white),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Zubilo',
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            shadows: [
+              Shadow(offset: Offset(-2, -2), color: Colors.black),
+              Shadow(offset: Offset(2, -2), color: Colors.black),
+              Shadow(offset: Offset(-2, 2), color: Colors.black),
+              Shadow(offset: Offset(2, 2), color: Colors.black),
+              Shadow(offset: Offset(0, -2), color: Colors.black),
+              Shadow(offset: Offset(0, 2), color: Colors.black),
+              Shadow(offset: Offset(-2, 0), color: Colors.black),
+              Shadow(offset: Offset(2, 0), color: Colors.black),
+              Shadow(offset: Offset(-1, -1), color: Colors.black),
+              Shadow(offset: Offset(1, -1), color: Colors.black),
+              Shadow(offset: Offset(-1, 1), color: Colors.black),
+              Shadow(offset: Offset(1, 1), color: Colors.black),
+            ],
+          ),
         ),
-        backgroundColor: const Color(0xFF3E2723), // Darker brown
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -33,10 +54,20 @@ class _SettingsPageState extends State<SettingsPage> {
             SwitchListTile(
               title: const Text(
                 'Enable Notifications',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  fontFamily: 'Zubilo',
+                  fontSize: 24,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(offset: Offset(-1, -1), color: Colors.black),
+                    Shadow(offset: Offset(1, -1), color: Colors.black),
+                    Shadow(offset: Offset(-1, 1), color: Colors.black),
+                    Shadow(offset: Offset(1, 1), color: Colors.black),
+                  ],
+                ),
               ),
               value: _notificationsEnabled,
-              activeColor: Colors.amber,
+              activeColor: const Color.fromARGB(255, 49, 49, 49),
               onChanged: (bool value) {
                 setState(() {
                   _notificationsEnabled = value;
@@ -50,9 +81,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 const Text(
                   'Music Volume',
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Zubilo',
+                    fontSize: 24,
                     color: Colors.white,
+                    shadows: [
+                      Shadow(offset: Offset(-1, -1), color: Colors.black),
+                      Shadow(offset: Offset(1, -1), color: Colors.black),
+                      Shadow(offset: Offset(-1, 1), color: Colors.black),
+                      Shadow(offset: Offset(1, 1), color: Colors.black),
+                    ],
                   ),
                 ),
                 Slider(
@@ -64,16 +101,22 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                   min: 0.0,
                   max: 1.0,
-                  activeColor: Colors.amber,
-                  inactiveColor: Colors.brown[200],
+                  activeColor: const Color.fromARGB(255, 49, 49, 49),
+                  inactiveColor: Colors.white,
                 ),
                 const SizedBox(height: 16),
                 const Text(
                   'Sound FX Volume',
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Zubilo',
+                    fontSize: 24,
                     color: Colors.white,
+                    shadows: [
+                      Shadow(offset: Offset(-1, -1), color: Colors.black),
+                      Shadow(offset: Offset(1, -1), color: Colors.black),
+                      Shadow(offset: Offset(-1, 1), color: Colors.black),
+                      Shadow(offset: Offset(1, 1), color: Colors.black),
+                    ],
                   ),
                 ),
                 Slider(
@@ -85,54 +128,56 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                   min: 0.0,
                   max: 1.0,
-                  activeColor: Colors.amber,
-                  inactiveColor: Colors.brown[200],
+                  activeColor: const Color.fromARGB(255, 49, 49, 49),
+                  inactiveColor: Colors.white,
                 ),
               ],
             ),
             const SizedBox(height: 30),
-           ElevatedButton.icon(
-          onPressed: () {
-            Navigator.push(
-              context,
-                MaterialPageRoute(builder: (context) => const RulesPage()),
-              );
-            },
-          icon: const Icon(Icons.help_outline),
-            label: const Text(
-            'Help',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFD700),
-              foregroundColor: Colors.black,
-              shadowColor: Colors.black,
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          ),
-        ),
-            const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () {
-               // Navigator.pushNamed(context, '/credits');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RulesPage()),
+                );
               },
-              icon: const Icon(Icons.star),
+              icon: const Icon(Icons.help_outline, color: Colors.white),
               label: const Text(
-                'Credits',
+                'Help',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFD700),
-                foregroundColor: Colors.black,
+                backgroundColor: const Color.fromARGB(255, 49, 49, 49),
+                foregroundColor: Colors.white,
                 shadowColor: Colors.black,
                 elevation: 8,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                // Navigator.pushNamed(context, '/credits');
+              },
+              icon: const Icon(Icons.star, color: Colors.white),
+              label: const Text(
+                'Credits',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 49, 49, 49),
+                foregroundColor: Colors.white,
+                shadowColor: Colors.black,
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],

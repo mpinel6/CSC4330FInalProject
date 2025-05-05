@@ -40,6 +40,14 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   int _selectedIndex = 0;
+  double _logoOpacity = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = 0;
+    _logoOpacity = 1.0;
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -48,16 +56,25 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    if (index == 1) {
+    if (index == 0) {
+      if (_selectedIndex != 0) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+      setState(() {
+        _selectedIndex = 0;
+      });
+    } else if (index == 1) {
+      setState(() {
+        _selectedIndex = 1;
+      });
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const RulesPage()),
       );
     } else if (index == 2) {
+      setState(() {
+        _selectedIndex = 2;
+      });
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const SettingsPage()),
@@ -71,35 +88,18 @@ class _MyHomePageState extends State<MyHomePage> {
         MediaQuery.of(context).orientation == Orientation.portrait;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: isPortrait
-          ? AppBar(
-              backgroundColor: Colors.brown[700],
-              elevation: 4,
-              title: Text(
-                widget.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              centerTitle: true,
-            )
-          : null,
-      body: Stack(
-        fit: StackFit.expand,
+      backgroundColor: const Color.fromARGB(255, 161, 159, 159),
+      body: Column(
         children: [
-          Image.asset(
-            'assets/images/back.jpg',
-            fit: BoxFit.cover,
-          ),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return isPortrait
-                  ? _buildPortraitLayout()
-                  : _buildLandscapeLayout();
-            },
+          const SizedBox(height: 50),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return isPortrait
+                    ? _buildPortraitLayout()
+                    : _buildLandscapeLayout();
+              },
+            ),
           ),
         ],
       ),
@@ -119,211 +119,140 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.brown[700],
-        backgroundColor: Colors.brown[200],
+        selectedItemColor: const Color(0xFF232323),
+        unselectedItemColor: const Color(0xFFB0B0B0),
+        backgroundColor: const Color(0xFFD6D6D6),
         onTap: _onItemTapped,
       ),
     );
   }
 
   Widget _buildPortraitLayout() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: <Widget>[
-        const SizedBox(height: 90),
-        const Text(
-          'Welcome to',
-          style: TextStyle(
-            fontSize: 40,
-            color: Colors.white,
-            fontFamily: 'Zubilo',
-            fontWeight: FontWeight.bold,
-            shadows: [
-              Shadow(
-                offset: Offset(-2, -2),
-                color: Colors.black,
-                blurRadius: 0,
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: <Widget>[
+          const SizedBox(height: 60),
+          const Text(
+            'Welcome to',
+            style: TextStyle(
+              fontSize: 40,
+              color: Colors.white,
+              fontFamily: 'Zubilo',
+              fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(offset: Offset(-2, -2), color: Colors.black),
+                Shadow(offset: Offset(2, -2), color: Colors.black),
+                Shadow(offset: Offset(-2, 2), color: Colors.black),
+                Shadow(offset: Offset(2, 2), color: Colors.black),
+                Shadow(offset: Offset(0, -2), color: Colors.black),
+                Shadow(offset: Offset(0, 2), color: Colors.black),
+                Shadow(offset: Offset(-2, 0), color: Colors.black),
+                Shadow(offset: Offset(2, 0), color: Colors.black),
+                Shadow(offset: Offset(-1, -1), color: Colors.black),
+                Shadow(offset: Offset(1, -1), color: Colors.black),
+                Shadow(offset: Offset(-1, 1), color: Colors.black),
+                Shadow(offset: Offset(1, 1), color: Colors.black),
+              ],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          AnimatedOpacity(
+            opacity: _logoOpacity,
+            duration: const Duration(seconds: 2),
+            child: Image.asset(
+              'assets/images/Logo.png',
+              width: 350,
+              height: 350,
+            ),
+          ),
+          const SizedBox(height: 40),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Flexible(
+                child: buildButton('Play LAN', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const lanhome()),
+                  );
+                }),
               ),
-              Shadow(
-                offset: Offset(2, -2),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(-2, 2),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(2, 2),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(0, -2),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(0, 2),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(-2, 0),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(2, 0),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(-1, -1),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(1, -1),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(-1, 1),
-                color: Colors.black,
-                blurRadius: 0,
-              ),
-              Shadow(
-                offset: Offset(1, 1),
-                color: Colors.black,
-                blurRadius: 0,
+              Flexible(
+                child: buildButton('Play AI', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const Gamevsai()),
+                  );
+                }),
               ),
             ],
           ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 320),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Flexible(
-              child: buildButton('Play LAN', () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const lanhome()),
-                );
-              }),
-            ),
-            Flexible(
-              child: buildButton('Play AI', () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const Gamevsai()),
-                );
-              }),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        buildButton('QuickStartTest', () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const mattgamecoding()),
-          );
-        }),
-      ],
+          const SizedBox(height: 20),
+          buildButton('QuickStartTest', () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const mattgamecoding()),
+            );
+          }),
+          const SizedBox(height: 40),
+        ],
+      ),
     );
   }
 
   Widget _buildLandscapeLayout() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 5,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Text(
-                  'Welcome to',
-                  style: TextStyle(
-                    fontSize: 35,
-                    color: Colors.white,
-                    fontFamily: 'Zubilo',
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(-2, -2),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(2, -2),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(-2, 2),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(2, 2),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(0, -2),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(0, 2),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(-2, 0),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(2, 0),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(-1, -1),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(1, -1),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(-1, 1),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                      Shadow(
-                        offset: Offset(1, 1),
-                        color: Colors.black,
-                        blurRadius: 0,
-                      ),
-                    ],
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 0.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 5,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Welcome to',
+                    style: TextStyle(
+                      fontSize: 35,
+                      color: Colors.white,
+                      fontFamily: 'Zubilo',
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(offset: Offset(-2, -2), color: Colors.black),
+                        Shadow(offset: Offset(2, -2), color: Colors.black),
+                        Shadow(offset: Offset(-2, 2), color: Colors.black),
+                        Shadow(offset: Offset(2, 2), color: Colors.black),
+                        Shadow(offset: Offset(0, -2), color: Colors.black),
+                        Shadow(offset: Offset(0, 2), color: Colors.black),
+                        Shadow(offset: Offset(-2, 0), color: Colors.black),
+                        Shadow(offset: Offset(2, 0), color: Colors.black),
+                        Shadow(offset: Offset(-1, -1), color: Colors.black),
+                        Shadow(offset: Offset(1, -1), color: Colors.black),
+                        Shadow(offset: Offset(-1, 1), color: Colors.black),
+                        Shadow(offset: Offset(1, 1), color: Colors.black),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+                  const SizedBox(height: 0),
+                  AnimatedOpacity(
+                    opacity: _logoOpacity,
+                    duration: const Duration(seconds: 2),
+                    child: Image.asset(
+                      'assets/images/Logo.png',
+                      width: 230,
+                      height: 230,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            flex: 5,
-            child: SingleChildScrollView(
+            Expanded(
+              flex: 5,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -351,8 +280,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -361,7 +290,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.brown[700],
+        backgroundColor: const Color.fromARGB(255, 49, 49, 49),
         padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -399,6 +328,18 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class RulesLayout extends StatelessWidget {
+  const RulesLayout({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: RulesContent(key: rulesContentKey),
     );
   }
 }
