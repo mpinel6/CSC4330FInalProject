@@ -71,6 +71,7 @@ flutter:
     - assets/images/king.jpg
     - assets/images/queen.jpg
     - assets/images/back.jpg
+    - assets/images/backgroundimage.png
     - assets/Music/BG_Music.mp3
     - assets/Music/CardDownSfx.mp3
 
