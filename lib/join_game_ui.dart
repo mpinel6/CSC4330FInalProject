@@ -4,6 +4,7 @@ import 'multiplayer.dart';
 import 'network_discovery.dart';
 import 'sync_test_game.dart';
 import 'game_state_manager.dart';
+import 'lan_card_game.dart';
 
 class JoinGamePage extends StatefulWidget {
   const JoinGamePage({super.key});
@@ -169,7 +170,7 @@ void _safeNavigateToGame() {
       print('Attempting navigation to SyncTestGame...');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => SyncTestGame(
+          builder: (context) => LanCardGame(
             multiplayerService: _multiplayerService,
             isHost: false,
             gameCode: _connectedCode ?? 'unknown',

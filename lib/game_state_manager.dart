@@ -20,46 +20,112 @@ class GameStateManager {
   }
   
   // Update the message listener to handle client actions
+@override
 void _setUpMessageListener() {
   _multiplayerService.gameDataStream.listen(
     (data) {
       try {
-        print('GameStateManager received data: ${data.toString().substring(0, min(100, data.toString().length))}');
+        print('GameStateManager received: ${data.toString().substring(0, min(100, data.toString().length))}');
         
         // Handle game state updates
         if (data['type'] == 'game_state_update' && data.containsKey('data')) {
           print('Processing state update');
           _updateState(data['data']);
         } 
-        // Handle game actions directly
+        // Handle game actions specifically
         else if (data['type'] == 'game_action') {
           print('Processing game action: ${data['action']}');
           final action = data['action'];
           
           if (action == 'incrementCounter') {
+            // Legacy clicker game action
             final playerName = data['playerName'] ?? 'Unknown';
-            print('Increment from $playerName');
-            
-            // Update counter for everyone
             final newCounter = (_currentState['counter'] ?? 0) + 1;
+            
             _updateState({
               'counter': newCounter,
               'lastClicker': playerName
             });
             
-            // Host should broadcast the update to everyone
             if (_multiplayerService.isHost) {
               _broadcastState();
             }
           }
+          else if (action == 'dealCards' && _multiplayerService.isHost) {
+            // Host should deal cards
+            print('Host received deal cards request');
+            // No implementation needed as the host UI should handle this
+          }
+          else if (action == 'playCards' && _multiplayerService.isHost) {
+            // Host processing client's played cards
+            print('Host received played cards from client');
+            final playedCards = data['data']['playedCards'];
+            
+            // Update host state to reflect client's move
+            final gameState = {
+              'lastPlayedCards': playedCards,
+              'isPlayer1Turn': true, // Back to host's turn
+              'hasPressedLiar': false,
+              'logMessage': 'Client played ${playedCards.length} card(s)'
+            };
+            
+            _updateState(gameState);
+            _broadcastState();
+          }
+          else if (action == 'checkLiar' && _multiplayerService.isHost) {
+            // Host processing client's liar call
+            print('Host received liar call from client');
+            
+            // Get the current state and check if cards match
+            final lastPlayedCards = _currentState['lastPlayedCards'] ?? [];
+            final topLeftCard = _currentState['topLeftCard'];
+            
+            bool allCardsMatch = true;
+            for (final card in lastPlayedCards) {
+              final cardValue = card['value'];
+              if (cardValue != topLeftCard && cardValue != 'Joker') {
+                allCardsMatch = false;
+                break;
+              }
+            }
+            
+            // Update game state based on the result
+            final gameState = {
+              'hasPressedLiar': true,
+              'isPlayerCallingLiar': true,
+              'logMessage': 'Client called Liar!'
+            };
+            
+            _updateState(gameState);
+            _broadcastState();
+            
+            // After a delay, update tokens
+            Future.delayed(Duration(milliseconds: 4000), () {
+              final newState = Map<String, dynamic>.from(_currentState);
+              
+              if (allCardsMatch) {
+                // Client was wrong
+                newState['player2Tokens'] = (newState['player2Tokens'] ?? 3) - 1;
+                newState['logMessage'] = 'Client called Liar incorrectly and lost a token';
+              } else {
+                // Client was right
+                newState['player1Tokens'] = (newState['player1Tokens'] ?? 3) - 1;
+                newState['logMessage'] = 'Client called Liar correctly! Host lost a token';
+              }
+              
+              newState['isPlayerCallingLiar'] = false;
+              _updateState(newState);
+              _broadcastState();
+            });
+          }
         }
       } catch (e) {
-        print('Error processing GameStateManager data: $e');
+        print('Error in GameStateManager: $e');
       }
     },
     onError: (error) {
       print('GameStateManager stream error: $error');
-    }
+    },
   );
 }
   
@@ -158,4 +224,9 @@ void _setUpMessageListener() {
   void dispose() {
     _stateController.close();
   }
+void updateState(Map<String, dynamic> newState) {
+  _updateState(newState);
+  _broadcastState();
+}
+
 }

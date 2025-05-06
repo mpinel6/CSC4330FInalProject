@@ -5,6 +5,7 @@ import 'network_discovery.dart';
 import 'sync_test_game.dart';
 import 'game_state_manager.dart';
 import 'dart:convert';
+import 'lan_card_game.dart';
 
 class CreateGamePage extends StatefulWidget {
   const CreateGamePage({super.key});
@@ -120,7 +121,7 @@ class _CreateGamePageState extends State<CreateGamePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SyncTestGame(
+        builder: (context) => LanCardGame(
           multiplayerService: _multiplayerService,
           isHost: true,
           gameCode: _gameCode ?? '',
