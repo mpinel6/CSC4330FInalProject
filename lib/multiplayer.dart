@@ -74,28 +74,37 @@ class MultiplayerService {
       
       // Listen for messages from the host
       socket.listen(
-        (data) {
-          final message = jsonDecode(utf8.decode(data));
-          
-          if (message['type'] == 'join_response') {
-            if (message['accepted']) {
-              _connectionStatusController.add('Joined game successfully!');
-            } else {
-              _connectionStatusController.add('Failed to join: ${message['reason']}');
-              socket.close();
-            }
-          } else if (message['type'] == 'game_data' || 
-                     message['type'] == 'game_state_update') {
-            _gameDataController.add(message);
-          }
-        },
-        onDone: () {
-          _connectionStatusController.add('Disconnected from host');
-        },
-        onError: (error) {
-          _connectionStatusController.add('Connection error: $error');
-        }
-      );
+  (data) {
+    try {
+      final message = jsonDecode(utf8.decode(data));
+      
+      // Debug the raw incoming message
+      print('CLIENT RECEIVED RAW: ${utf8.decode(data)}');
+      
+      if (message['type'] == 'join_response') {
+        // Existing join response code...
+      } 
+      // Add this condition to explicitly handle game start messages
+      else if (message['type'] == 'game_start') {
+        print('CLIENT SOCKET: Received game_start command');
+        // Forward directly to game data controller
+        _gameDataController.add(message);
+      }
+      else if (message['type'] == 'game_data' || 
+               message['type'] == 'game_state_update') {
+        _gameDataController.add(message);
+      }
+    } catch (e) {
+      print('Error parsing socket message: $e');
+    }
+  },
+  onDone: () {
+    _connectionStatusController.add('Disconnected from host');
+  },
+  onError: (error) {
+    _connectionStatusController.add('Connection error: $error');
+  }
+);
       
       return true;
     } catch (e) {
@@ -220,6 +229,46 @@ class MultiplayerService {
       client.write(gameUpdate);
     }
   }
+
+  // Send a direct game command without wrapping
+void sendGameCommand(Map<String, dynamic> commandData) {// may not be needed?
+  final command = jsonEncode(commandData);
+  
+  // Print for debugging
+  print('Sending command: $command');
+  
+  for (final client in _connectedClients) {
+    client.write(command);
+  }
+  
+  // Also notify the host's listeners
+  if (commandData['type'] == 'game_start') {
+    _gameDataController.add(commandData);
+  }
+}
+
+// Safe method to send game start command
+void sendGameStartCommand(String gameCode) {
+  try {
+    // Create a simple, stable command format
+    final command = {
+      'type': 'game_start',
+      'gameCode': gameCode,
+      'timestamp': DateTime.now().millisecondsSinceEpoch
+    };
+    
+    // Use raw socket write for reliability
+    final jsonStr = jsonEncode(command);
+    for (final socket in _connectedClients) {
+      socket.write(jsonStr);
+    }
+    
+    // Also notify local listeners through controller
+    _gameDataController.add(command);
+  } catch (e) {
+    print('Error sending game start command: $e');
+  }
+}
   
   // Clean up resources
   void dispose() {
@@ -230,4 +279,60 @@ class MultiplayerService {
     _gameDataController.close();
     _connectionStatusController.close();
   }
+
+  Stream<String> get messageStream {
+  // Create a transformer that converts game data to string messages
+  final controller = StreamController<String>.broadcast();
+  
+  gameDataStream.listen((data) {
+    try {
+      // Convert the data to a JSON string
+      controller.add(jsonEncode(data));
+    } catch (e) {
+      controller.addError('Error encoding message: $e');
+    }
+  }, 
+  onError: (e) => controller.addError(e),
+  onDone: () => controller.close());
+  
+  return controller.stream;
+}
+
+// Add a method to send messages
+void sendMessage(String message) {
+  try {
+    // Parse message to determine what kind of data it is
+    final data = jsonDecode(message);
+    
+    if (data['type'] == 'state_update') {
+      // Use existing method to update game state
+      updateGameState(data['state']);
+    } else {
+      // Generic game update
+      sendGameUpdate(data);
+    }
+  } catch (e) {
+    _connectionStatusController.add('Error sending message: $e');
+  }
+}
+
+void broadcastRawMessage(String jsonMessage) {
+  try {
+    print('Broadcasting raw message: $jsonMessage');
+    for (final client in _connectedClients) {
+      client.write(jsonMessage);
+    }
+    
+    // Also process the message locally
+    try {
+      final data = jsonDecode(jsonMessage);
+      _gameDataController.add(data);
+    } catch (e) {
+      print('Error parsing local message: $e');
+    }
+  } catch (e) {
+    print('Error broadcasting message: $e');
+  }
+}
+
 }

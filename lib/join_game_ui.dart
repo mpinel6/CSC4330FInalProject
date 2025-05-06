@@ -23,36 +23,48 @@ class _JoinGamePageState extends State<JoinGamePage> {
   String? _connectedCode;
   
   bool _isScanning = false;
+  bool _isNavigating = false;
   List<String> _availableHosts = [];
   String? _statusMessage;
   
-  @override
-  void initState() {
-    super.initState();
-    _multiplayerService.connectionStatus.listen((status) {
+ @override
+void initState() {
+  super.initState();
+  _multiplayerService.connectionStatus.listen((status) {
+    if (mounted) {
       setState(() {
         _statusMessage = status;
-        
-        // If successfully joined, set up game state manager
-        if (status.contains('Joined game successfully')) {
-          _gameStateManager = GameStateManager(_multiplayerService);
-          
-          // Listen for game state changes
-          _stateSubscription = _gameStateManager!.stateStream.listen((state) {
-            // If game phase changes to playing, navigate to game screen
-            if (state['gamePhase'] == 'playing' && _connectedCode != null) {
-              _navigateToGame();
-            }
-          });
-        }
       });
-    });
-    
-    // Add special option for emulator testing
-    if (_availableHosts.isEmpty) {
-      _availableHosts.add('10.0.2.2');  // Special IP for emulator to host connection
     }
-  }
+  });
+  
+  // Add listener for game data updates with better error handling
+  _multiplayerService.gameDataStream.listen(
+    (data) {
+      // Debug print
+      print('Client received message: $data');
+      
+      // Safely handle game start notification
+      if (data != null && 
+          data is Map<String, dynamic> && 
+          data['type'] == 'game_start') {
+        print('Client received game start command');
+        
+        // Use the safer navigation method
+        _safeNavigateToGame();
+      }
+    },
+    onError: (error) {
+      print('Error in game data stream: $error');
+      if (mounted) {
+        setState(() {
+          _statusMessage = 'Connection error: $error';
+        });
+      }
+    }
+  );
+}
+
   
   @override
   void dispose() {
@@ -137,6 +149,44 @@ class _JoinGamePageState extends State<JoinGamePage> {
       ),
     );
   }
+
+  // Add this method to safely navigate to the game
+void _safeNavigateToGame() {
+  if (_isNavigating) return;
+  _isNavigating = true;
+  
+  print('Preparing for safe navigation to game...');
+  
+  // Use Navigator.of(context).pushAndRemoveUntil for more stable navigation
+  Future.delayed(Duration(milliseconds: 200), () {
+    if (!mounted) {
+      print('Widget not mounted, aborting navigation');
+      _isNavigating = false;
+      return;
+    }
+    
+    try {
+      print('Attempting navigation to SyncTestGame...');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => SyncTestGame(
+            multiplayerService: _multiplayerService,
+            isHost: false,
+            gameCode: _connectedCode ?? 'unknown',
+          ),
+        ),
+      );
+    } catch (e) {
+      print('Navigation failed: $e');
+      _isNavigating = false;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Navigation error: $e')),
+        );
+      }
+    }
+  });
+}
 
   @override
   Widget build(BuildContext context) {

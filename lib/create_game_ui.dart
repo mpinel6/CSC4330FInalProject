@@ -4,6 +4,7 @@ import 'multiplayer.dart';
 import 'network_discovery.dart';
 import 'sync_test_game.dart';
 import 'game_state_manager.dart';
+import 'dart:convert';
 
 class CreateGamePage extends StatefulWidget {
   const CreateGamePage({super.key});
@@ -69,24 +70,43 @@ class _CreateGamePageState extends State<CreateGamePage> {
   }
   
   void _startGame() {
-    if (_playerCount < 2) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Need at least one more player to start')),
-      );
-      return;
-    }
+  if (_playerCount < 2) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Need at least one more player to start')),
+    );
+    return;
+  }
+  
+  // Use more reliable direct socket communication
+  final gameStartCommand = {
+    'type': 'game_start',
+    'gameCode': _gameCode,
+    'message': 'Game starting now!'
+  };
+  
+  print('HOST: Sending game start command: $gameStartCommand');
+  
+  // Send raw command to all clients
+  final jsonStr = jsonEncode(gameStartCommand);
+  _multiplayerService.broadcastRawMessage(jsonStr);
+  
+  // Delay navigation to ensure message is sent
+  Future.delayed(const Duration(milliseconds: 1000), () {
+    if (!mounted) return;
     
-    // Navigate to the sync test game screen
-    Navigator.of(context).push(
+    print('HOST: Navigating to game');
+    Navigator.push(
+      context,
       MaterialPageRoute(
         builder: (context) => SyncTestGame(
           multiplayerService: _multiplayerService,
           isHost: true,
-          gameCode: _gameCode!,
+          gameCode: _gameCode ?? '',
         ),
       ),
     );
-  }
+  });
+}
 
   @override
   Widget build(BuildContext context) {

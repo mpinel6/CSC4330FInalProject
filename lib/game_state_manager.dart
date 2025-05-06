@@ -1,96 +1,105 @@
 import 'dart:async';
+import 'dart:convert';
 import 'multiplayer.dart';
+import 'package:flutter/foundation.dart';
 
 class GameStateManager {
-  // The current game state
-  Map<String, dynamic> _gameState = {};
-  
-  // Reference to the multiplayer service
   final MultiplayerService _multiplayerService;
+  final _stateController = StreamController<Map<String, dynamic>>.broadcast();
+  Map<String, dynamic> _currentState = {
+    'counter': 0,
+    'lastClicker': 'None',
+  };
   
-  // Stream subscription for game state updates
-  StreamSubscription? _gameStateSubscription;
-  
-  // Stream controller to expose game state to UI
-  final StreamController<Map<String, dynamic>> _stateController = 
-      StreamController<Map<String, dynamic>>.broadcast();
-  
-  // Getter for the state stream
   Stream<Map<String, dynamic>> get stateStream => _stateController.stream;
   
   GameStateManager(this._multiplayerService) {
-    // Listen to network updates
-    _gameStateSubscription = _multiplayerService.gameStateStream.listen(_handleStateUpdate);
+    // Listen to incoming messages and update state
+    _setUpMessageListener();
   }
   
-  // Initialize the game state
-  void initializeGameState(bool isHost, List<String> players) {
-    _gameState = {
-      'players': players,
-      'currentTurn': 0,
-      'cards': {}, // Map of player IDs to their cards
-      'gamePhase': 'setup',
-      // Add other game state properties
-    };
+  void _setUpMessageListener() {
+  _multiplayerService.gameDataStream.listen(
+    (data) {
+      try {
+        // Check if this is a state update
+        if (data['type'] == 'state_update' && data.containsKey('data')) {
+          _updateState(data['data']);
+        } 
+        // Handle game_action events that might affect state
+        else if (data['type'] == 'game_action') {
+          // Process game actions if needed
+          final action = data['action'];
+          final actionData = data['data'] ?? {};
+          handlePlayerAction(data['playerId'] ?? 'unknown', action, actionData);
+        }
+      } catch (e) {
+        // Use a logger or ignore silently in production
+        debugPrint('Error processing game data: $e');
+      }
+    },
+    onError: (error) {
+      debugPrint('Game data stream error: $error');
+    },
+  );
+}
+  
+  void _updateState(Map<String, dynamic> newState) {
+    // Merge new state with current state
+    _currentState = {..._currentState, ...newState};
     
-    if (isHost) {
-      // Host broadcasts the initial state
-      _multiplayerService.updateGameState(_gameState);
+    // Notify listeners
+    if (!_stateController.isClosed) {
+      _stateController.add(_currentState);
     }
   }
   
-  // Handle player action (called by UI)
-  void handlePlayerAction(String playerId, String action, dynamic actionData) {
-    if (_multiplayerService.isHost) {
-      // Host applies the action directly
-      _applyAction(playerId, action, actionData);
-      _multiplayerService.updateGameState(_gameState);
-    } else {
-      // Client sends the action to host
-      _multiplayerService.sendGameAction(action, {
-        'playerId': playerId,
-        'actionData': actionData
-      });
-    }
-  }
-  
-  // Apply an action to the game state
-  void _applyAction(String playerId, String action, dynamic actionData) {
-    switch (action) {
-      case 'startGame':
-        _gameState['gamePhase'] = 'playing';
-        _gameState['lastAction'] = '$playerId started the game';
-        break;
-        
-      case 'incrementCounter':
-        _gameState['counter'] = (_gameState['counter'] ?? 0) + (actionData['amount'] ?? 1);
-        _gameState['lastAction'] = '$playerId incremented the counter';
-        break;
-        
-      case 'playCard':
-        // Apply card play logic
-        // _gameState['cards'][playerId] = ...
-        break;
-        
-      case 'endTurn':
-        // Move to next player's turn
-        _gameState['currentTurn'] = (_gameState['currentTurn'] + 1) % _gameState['players'].length;
-        break;
-      // Add other action types
-    }
+  // Initialize the clicker game state
+  void initializeClickerState() {
+    _updateState({
+      'counter': 0,
+      'lastClicker': 'None'
+    });
     
-    // Notify UI of state change
-    _stateController.add(_gameState);
+    _broadcastState();
   }
   
-  // Handle incoming state update from network
-  void _handleStateUpdate(Map<String, dynamic> newState) {
-    _gameState = newState;
-    _stateController.add(_gameState);
+  // Increment the counter
+  void incrementCounter(String playerName) {
+    // Increment locally
+    final newCounter = (_currentState['counter'] ?? 0) + 1;
+    
+    // Update state
+    _updateState({
+      'counter': newCounter,
+      'lastClicker': playerName
+    });
+    
+    // Send to other players
+    _broadcastState();
   }
+  
+  // For backwards compatibility
+  void initializeGameState(bool isHosting, List<String> players) {
+    initializeClickerState();
+  }
+  
+  // For backwards compatibility
+  void handlePlayerAction(String playerId, String action, Map<String, dynamic> data) {
+    if (action == 'incrementCounter') {
+      incrementCounter(playerId);
+    } else if (action == 'startGame') {
+      // Nothing special needed for clicker
+      _broadcastState();
+    }
+  }
+  
+  // Broadcast state to all connected clients
+  void _broadcastState() {
+  _multiplayerService.updateGameState(_currentState);
+}
   
   void dispose() {
-    _gameStateSubscription?.cancel();
     _stateController.close();
   }
 }
