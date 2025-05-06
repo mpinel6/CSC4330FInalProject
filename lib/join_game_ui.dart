@@ -70,7 +70,7 @@ void initState() {
   void dispose() {
     _codeController.dispose();
     _stateSubscription?.cancel();
-    _multiplayerService.dispose();
+    //_multiplayerService.dispose();
     super.dispose();
   }
   

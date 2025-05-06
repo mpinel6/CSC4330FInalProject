@@ -13,6 +13,8 @@ class MultiplayerService {
   
   // The game session code (6 digits)
   String? _sessionCode;
+
+  int _playerCount = 1;
   
   // Port to use for the connection
   final int _port = 8888;
@@ -20,6 +22,8 @@ class MultiplayerService {
   // Track whether this instance is a host
   bool _isHost = false;
   bool get isHost => _isHost;
+
+  List<Socket> get connectedClients => _connectedClients;
   
   // Game data stream controller
   final _gameDataController = StreamController<Map<String, dynamic>>.broadcast();
@@ -59,108 +63,161 @@ class MultiplayerService {
   }
   
   // Join an existing game session
-  Future<bool> joinGameSession(String code, String hostIp) async {
-    try {
-      // Connect to the host
-      final socket = await Socket.connect(hostIp, _port);
-      _isHost = false;
-      
-      // Send the code for verification
-      socket.write(jsonEncode({
-        'type': 'join',
-        'code': code,
-        'playerName': 'Player${Random().nextInt(1000)}'
-      }));
-      
-      // Listen for messages from the host
-      socket.listen(
-  (data) {
-    try {
-      final message = jsonDecode(utf8.decode(data));
-      
-      // Debug the raw incoming message
-      print('CLIENT RECEIVED RAW: ${utf8.decode(data)}');
-      
-      if (message['type'] == 'join_response') {
-        // Existing join response code...
-      } 
-      // Add this condition to explicitly handle game start messages
-      else if (message['type'] == 'game_start') {
-        print('CLIENT SOCKET: Received game_start command');
-        // Forward directly to game data controller
-        _gameDataController.add(message);
-      }
-      else if (message['type'] == 'game_data' || 
-               message['type'] == 'game_state_update') {
-        _gameDataController.add(message);
-      }
-    } catch (e) {
-      print('Error parsing socket message: $e');
-    }
-  },
-  onDone: () {
-    _connectionStatusController.add('Disconnected from host');
-  },
-  onError: (error) {
-    _connectionStatusController.add('Connection error: $error');
-  }
-);
-      
-      return true;
-    } catch (e) {
-      _connectionStatusController.add('Failed to join game: $e');
-      return false;
-    }
-  }
-  
-  // Handle a new client connection
-  void _handleClientConnection(Socket socket) {
-    // Listen for messages from this client
+Future<bool> joinGameSession(String code, String hostIp) async {
+  try {
+    // Connect to the host
+    final socket = await Socket.connect(hostIp, _port);
+    _isHost = false;
+    
+    // Store the socket for later use
+    _connectedClients = [socket];
+    
+    // Send the code for verification
+    socket.write(jsonEncode({
+      'type': 'join',
+      'code': code,
+      'playerName': 'Player${Random().nextInt(1000)}'
+    }) + '\n');
+    
+    // Connection feedback
+    _connectionStatusController.add('Connected to host at $hostIp');
+    
+    // Listen for messages from the host
     socket.listen(
       (data) {
-        final message = jsonDecode(utf8.decode(data));
+        // Split by newline to handle multiple messages in one packet
+        final messages = utf8.decode(data).split('\n').where((m) => m.isNotEmpty);
         
-        if (message['type'] == 'join') {
-          // Verify the code
-          if (message['code'] == _sessionCode) {
-            // Accept the client
-            socket.write(jsonEncode({
-              'type': 'join_response',
-              'accepted': true
-            }));
+        for (final rawMessage in messages) {
+          try {
+            print('CLIENT SOCKET RAW: $rawMessage');
             
-            _connectedClients.add(socket);
-            _connectionStatusController.add('Player connected: ${message['playerName']}');
-            
-            // Broadcast the updated player list to all clients
-            _broadcastPlayerList();
-          } else {
-            // Reject the client
-            socket.write(jsonEncode({
-              'type': 'join_response',
-              'accepted': false,
-              'reason': 'Invalid game code'
-            }));
+            try {
+              final message = jsonDecode(rawMessage);
+              print('CLIENT SOCKET PARSED: $message');
+              
+              if (message is Map<String, dynamic>) {
+                if (message.containsKey('type')) {
+                  // Handle game start messages
+                  if (message['type'] == 'game_start') {
+                    print('CLIENT SOCKET: Detected game_start command!');
+                    _gameDataController.add(message);
+                    _connectionStatusController.add('Game is starting!');
+                  }
+                  // Handle join response
+                  else if (message['type'] == 'join_response') {
+                    _connectionStatusController.add('Connected! Waiting for host to start the game...');
+                  }
+                  // Handle game state updates
+                  else if (message['type'] == 'game_data' || message['type'] == 'game_state_update') {
+                    print('CLIENT: Received game state update');
+                    _gameDataController.add(message);
+                  }
+                  // Handle click updates
+                  else if (message['type'] == 'game_action') {
+                    print('CLIENT: Received game action from host');
+                    _gameDataController.add(message);
+                  }
+                }
+              }
+            } catch (jsonError) {
+              print('Error parsing JSON: $jsonError');
+              
+              // Try handling as raw text (last resort)
+              if (rawMessage.contains('game_start')) {
+                print('CLIENT: Detected game_start in raw text');
+                _gameDataController.add({
+                  'type': 'game_start',
+                  'rawMessage': rawMessage
+                });
+                _connectionStatusController.add('Game is starting! (raw message)');
+              }
+            }
+          } catch (e) {
+            print('Error handling socket message: $e');
           }
-        } else if (message['type'] == 'game_action') {
-          // Process game action and broadcast updated state
-          // This will be handled by the GameStateManager
-          _gameDataController.add(message);
-          _broadcastGameAction(message, socket);
         }
       },
       onDone: () {
-        _connectedClients.remove(socket);
-        _connectionStatusController.add('A player disconnected');
-        _broadcastPlayerList();
+        _connectionStatusController.add('Disconnected from host');
       },
       onError: (error) {
-        _connectedClients.remove(socket);
-        _connectionStatusController.add('Client error: $error');
-        _broadcastPlayerList();
+        _connectionStatusController.add('Connection error: $error');
       }
     );
+    
+    return true;
+  } catch (e) {
+    _connectionStatusController.add('Failed to join game: $e');
+    return false;
   }
+}
+  
+  // Handle a new client connection
+    void _handleClientConnection(Socket socket) {
+  // Add to connected clients
+  _connectedClients.add(socket);
+  
+  // Update player count immediately
+  _playerCount = _connectedClients.length + 1; // +1 for host
+  _connectionStatusController.add('Player connected! Total: $_playerCount');
+  
+  // Listen for messages from this client
+  socket.listen(
+    (data) {
+      try {
+        // Split by newline to handle multiple messages in one packet
+        final messages = utf8.decode(data).split('\n').where((m) => m.isNotEmpty);
+        
+        for (final rawMessage in messages) {
+          try {
+            print('HOST received raw: $rawMessage');
+            final message = jsonDecode(rawMessage);
+            
+            if (message['type'] == 'join') {
+              // Process join message
+              final code = message['code'];
+              if (code == _sessionCode) {
+                socket.write(jsonEncode({
+                  'type': 'join_response',
+                  'success': true,
+                  'message': 'Connected to game'
+                }) + '\n');
+              }
+            } 
+            else if (message['type'] == 'game_action') {
+              // Forward game actions to controller
+              print('HOST: Received game action: ${message['action']}');
+              _gameDataController.add(message);
+              
+              // Also forward to other clients for sync
+              for (final client in _connectedClients) {
+                if (client != socket) {
+                  client.write(rawMessage + '\n');
+                }
+              }
+            }
+          } catch (e) {
+            print('Error parsing client message: $e');
+          }
+        }
+      } catch (e) {
+        print('Error reading from client: $e');
+      }
+    },
+    onDone: () {
+      _connectedClients.remove(socket);
+      _playerCount = _connectedClients.length + 1; // +1 for host
+      _connectionStatusController.add('Player disconnected! Total: $_playerCount');
+    },
+    onError: (error) {
+      print('Socket error: $error');
+      _connectedClients.remove(socket);
+      _playerCount = _connectedClients.length + 1; // +1 for host
+      _connectionStatusController.add('Connection error: $error');
+    }
+  );
+}
   
   // Broadcast the current player list to all clients
   void _broadcastPlayerList() {
@@ -186,16 +243,31 @@ class MultiplayerService {
   }
   
   // Send a game action to the host (from a client)
-  void sendGameAction(String action, Map<String, dynamic> actionData) {
-    if (!_isHost) {
-      // Only clients should send actions to host
-      _connectedClients.first.write(jsonEncode({
+  // Send a game action to the host
+void sendGameAction(String action, Map<String, dynamic> actionData) {
+  try {
+    if (!_isHost && _connectedClients.isNotEmpty) {
+      // Format the action message
+      final gameAction = {
         'type': 'game_action',
         'action': action,
-        'data': actionData
-      }));
+        'playerName': actionData['playerName'] ?? 'Unknown',
+        'timestamp': DateTime.now().millisecondsSinceEpoch
+      };
+      
+      print('CLIENT: Sending action: $action');
+      
+      // Serialize with newline terminator for reliable transmission
+      final jsonMessage = jsonEncode(gameAction) + '\n';
+      _connectedClients.first.write(jsonMessage);
+      
+      // Debug
+      print('CLIENT: Action sent successfully');
     }
+  } catch (e) {
+    print('Error sending game action: $e');
   }
+}
   
   // Update and broadcast game state (from host)
   void updateGameState(Map<String, dynamic> gameState) {
@@ -260,7 +332,7 @@ void sendGameStartCommand(String gameCode) {
     // Use raw socket write for reliability
     final jsonStr = jsonEncode(command);
     for (final socket in _connectedClients) {
-      socket.write(jsonStr);
+      socket.write(jsonStr + '\n'); // Add newline for consistency
     }
     
     // Also notify local listeners through controller
@@ -320,7 +392,8 @@ void broadcastRawMessage(String jsonMessage) {
   try {
     print('Broadcasting raw message: $jsonMessage');
     for (final client in _connectedClients) {
-      client.write(jsonMessage);
+      // Add newline character to ensure proper transmission
+      client.write(jsonMessage + '\n');
     }
     
     // Also process the message locally
@@ -334,5 +407,7 @@ void broadcastRawMessage(String jsonMessage) {
     print('Error broadcasting message: $e');
   }
 }
-
+void addToGameData(Map<String, dynamic> data) {
+  _gameDataController.add(data);
+}
 }

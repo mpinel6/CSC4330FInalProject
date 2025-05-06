@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'multiplayer.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:math';
 
 class GameStateManager {
   final MultiplayerService _multiplayerService;
@@ -18,29 +19,47 @@ class GameStateManager {
     _setUpMessageListener();
   }
   
-  void _setUpMessageListener() {
+  // Update the message listener to handle client actions
+void _setUpMessageListener() {
   _multiplayerService.gameDataStream.listen(
     (data) {
       try {
-        // Check if this is a state update
-        if (data['type'] == 'state_update' && data.containsKey('data')) {
+        print('GameStateManager received data: ${data.toString().substring(0, min(100, data.toString().length))}');
+        
+        // Handle game state updates
+        if (data['type'] == 'game_state_update' && data.containsKey('data')) {
+          print('Processing state update');
           _updateState(data['data']);
         } 
-        // Handle game_action events that might affect state
+        // Handle game actions directly
         else if (data['type'] == 'game_action') {
-          // Process game actions if needed
+          print('Processing game action: ${data['action']}');
           final action = data['action'];
-          final actionData = data['data'] ?? {};
-          handlePlayerAction(data['playerId'] ?? 'unknown', action, actionData);
+          
+          if (action == 'incrementCounter') {
+            final playerName = data['playerName'] ?? 'Unknown';
+            print('Increment from $playerName');
+            
+            // Update counter for everyone
+            final newCounter = (_currentState['counter'] ?? 0) + 1;
+            _updateState({
+              'counter': newCounter,
+              'lastClicker': playerName
+            });
+            
+            // Host should broadcast the update to everyone
+            if (_multiplayerService.isHost) {
+              _broadcastState();
+            }
+          }
         }
       } catch (e) {
-        // Use a logger or ignore silently in production
-        debugPrint('Error processing game data: $e');
+        print('Error processing GameStateManager data: $e');
       }
     },
     onError: (error) {
-      debugPrint('Game data stream error: $error');
-    },
+      print('GameStateManager stream error: $error');
+    }
   );
 }
   
@@ -66,18 +85,31 @@ class GameStateManager {
   
   // Increment the counter
   void incrementCounter(String playerName) {
-    // Increment locally
+  print('Increment counter called by $playerName');
+  
+  if (_multiplayerService.isHost) {
+    // Host implementation
     final newCounter = (_currentState['counter'] ?? 0) + 1;
     
-    // Update state
+    print('HOST: Incrementing counter to $newCounter');
+    
     _updateState({
       'counter': newCounter,
       'lastClicker': playerName
     });
     
-    // Send to other players
+    // Send to clients
     _broadcastState();
+  } else {
+    // Client implementation
+    print('CLIENT: Sending increment action to host');
+    
+    // Send action to host with player name
+    _multiplayerService.sendGameAction('incrementCounter', {
+      'playerName': playerName
+    });
   }
+}
   
   // For backwards compatibility
   void initializeGameState(bool isHosting, List<String> players) {
@@ -95,8 +127,32 @@ class GameStateManager {
   }
   
   // Broadcast state to all connected clients
-  void _broadcastState() {
-  _multiplayerService.updateGameState(_currentState);
+ void _broadcastState() {
+  try {
+    print('Broadcasting state update: $_currentState');
+    
+    // Format update message
+    final updateMessage = {
+      'type': 'game_state_update',
+      'data': _currentState,
+      'timestamp': DateTime.now().millisecondsSinceEpoch
+    };
+    
+    // Send with newline for reliable parsing
+    final jsonStr = jsonEncode(updateMessage) + '\n';
+    
+    // Send directly to sockets if possible
+    if (_multiplayerService.isHost) {
+      for (final client in _multiplayerService.connectedClients) {
+        client.write(jsonStr);
+      }
+    }
+    
+    // Also notify through controller
+    _multiplayerService.addToGameData(updateMessage);
+  } catch (e) {
+    print('Error broadcasting state: $e');
+  }
 }
   
   void dispose() {

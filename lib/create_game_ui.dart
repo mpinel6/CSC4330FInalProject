@@ -42,7 +42,7 @@ class _CreateGamePageState extends State<CreateGamePage> {
   
   @override
   void dispose() {
-    _multiplayerService.dispose();
+    //_multiplayerService.dispose();
     super.dispose();
   }
   
@@ -81,14 +81,36 @@ class _CreateGamePageState extends State<CreateGamePage> {
   final gameStartCommand = {
     'type': 'game_start',
     'gameCode': _gameCode,
-    'message': 'Game starting now!'
+    'message': 'Game starting now!',
+    'timestamp': DateTime.now().millisecondsSinceEpoch
   };
   
   print('HOST: Sending game start command: $gameStartCommand');
   
   // Send raw command to all clients
   final jsonStr = jsonEncode(gameStartCommand);
-  _multiplayerService.broadcastRawMessage(jsonStr);
+  
+  try {
+    // Send three times with newlines to ensure receipt
+    for (final client in _multiplayerService.connectedClients) {
+      client.write(jsonStr + '\n');
+      
+      // Short delay between sends
+      Future.delayed(Duration(milliseconds: 10), () {
+        client.write(jsonStr + '\n');
+      });
+    }
+    
+    // Add to game data for local listeners
+    _multiplayerService.sendGameStartCommand(_gameCode ?? '');
+    
+    // Show feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Game starting...'))
+    );
+  } catch (e) {
+    print('Error sending start command: $e');
+  }
   
   // Delay navigation to ensure message is sent
   Future.delayed(const Duration(milliseconds: 1000), () {

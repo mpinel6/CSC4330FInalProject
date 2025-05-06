@@ -33,50 +33,67 @@ class _SyncTestGameState extends State<SyncTestGame> {
 void initState() {
   super.initState();
   
-  print('SyncTestGame initialization starting - ${widget.isHost ? "HOST" : "CLIENT"} mode');
+  // Set up debugging log immediately
+  clickLog.add('Initializing game - ${widget.isHost ? "HOST" : "CLIENT"}');
   
-  // Delay GameStateManager initialization
-  Future.delayed(Duration(milliseconds: 500), () {
-    if (!mounted) return;
+  try {
+    // Initialize GameStateManager
+    print('Creating GameStateManager');
+    _gameStateManager = GameStateManager(widget.multiplayerService);
     
-    try {
-      print('Creating GameStateManager');
-      _gameStateManager = GameStateManager(widget.multiplayerService);
-      
-      print('Setting up state subscription');
-      _stateSubscription = _gameStateManager.stateStream.listen(
-        (state) {
-          print('Received state update: $state');
-          if (!mounted) return;
-          
+    // Listen to state updates
+    _stateSubscription = _gameStateManager.stateStream.listen(
+      (state) {
+        print('Received state update: $state');
+        if (mounted) {
           setState(() {
             counter = state['counter'] ?? 0;
             lastClicker = state['lastClicker'] ?? 'None';
-            clickLog.add('Counter: $counter (by $lastClicker)');
+            
+            // Add to log
+            final timestamp = DateTime.now().toString().substring(11, 19);
+            clickLog.add('[$timestamp] Counter: $counter (by $lastClicker)');
             if (clickLog.length > 20) clickLog.removeAt(0);
           });
-        },
-        onError: (e) {
-          print('State stream error: $e');
-          addErrorToLog('Stream error: $e');
         }
-      );
-      
-      // Initialize game state if host
-      if (widget.isHost) {
-        print('Initializing click state as host');
-        _gameStateManager.initializeClickerState();
+      },
+      onError: (error) {
+        print('Error in state stream: $error');
+        if (mounted) {
+          setState(() {
+            clickLog.add('Error: $error');
+          });
+        }
       }
-      
-      print('SyncTestGame initialization complete');
-      addInfoToLog('Game connected successfully');
-      
-    } catch (e) {
-      print('ERROR in SyncTestGame init: $e');
-      addErrorToLog('Setup error: $e');
+    );
+    
+    // Initialize game state if host
+    if (widget.isHost) {
+      print('HOST: Initializing clicker state');
+      Future.delayed(Duration(milliseconds: 300), () {
+        if (mounted) {
+          _gameStateManager.initializeClickerState();
+        }
+      });
     }
-  });
+    
+    // Monitor connection status
+    widget.multiplayerService.connectionStatus.listen((status) {
+      print('Connection status: $status');
+      if (mounted) {
+        setState(() {
+          isConnected = !status.contains('disconnected');
+          clickLog.add('Connection: $status');
+        });
+      }
+    });
+    
+  } catch (e) {
+    print('Error in initialization: $e');
+    clickLog.add('Init error: $e');
+  }
 }
+
   
   void addErrorToLog(String message) {
     setState(() {
@@ -101,23 +118,26 @@ void initState() {
   }
 
   void _incrementCounter() {
-    try {
-      final playerName = widget.isHost ? 'Host' : 'Client';
-      
-      // Use a non-blocking async operation for the click
-      Future.microtask(() {
-        _gameStateManager.incrementCounter(playerName);
-      });
-      
-      // Give immediate feedback in UI
-      setState(() {
-        // The state will be properly updated when the event circles back through the network
-        clickLog.add('Sending click...');
-      });
-    } catch (e) {
-      addErrorToLog('Click error: $e');
-    }
+  try {
+    final playerName = widget.isHost ? 'Host' : 'Client';
+    
+    print('${widget.isHost ? "HOST" : "CLIENT"} clicked the button');
+    
+    // Add feedback immediately
+    setState(() {
+      clickLog.add('Sending click as $playerName...');
+    });
+    
+    // Send the click
+    _gameStateManager.incrementCounter(playerName);
+    
+  } catch (e) {
+    print('Click error: $e');
+    setState(() {
+      clickLog.add('Error: $e');
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
