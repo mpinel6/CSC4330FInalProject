@@ -400,6 +400,35 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         _selectedCards
             .removeWhere((card) => _cardSelections['${card['id']}'] == true);
         _cardSelections.clear();
+
+        // Check if player has won (no cards left)
+        if (_selectedCards.isEmpty) {
+          // Show win dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Game Over!'),
+                content: const Text('Congratulations! You have won the game!'),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('Play Again'),
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close dialog
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const Gamevsai()),
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+          return; // Exit the method after showing win dialog
+        }
       }
       _isPlayer1Turn = false;
       if (!_isPlayer1Turn && _hasSecondPlayer) {
@@ -766,9 +795,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                           ),
                         ),
                       Container(
-                        height: 120,
+                        height: 100,
                         width: MediaQuery.of(context).size.width - 40,
-                        margin: const EdgeInsets.only(bottom: 20),
+                        margin: const EdgeInsets.only(bottom: 0),
                         child: Row(
                           children: [
                             Expanded(
@@ -813,8 +842,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                               child: AnimatedContainer(
                                                 duration: const Duration(
                                                     milliseconds: 200),
-                                                width: 80,
-                                                height: 120,
+                                                width: 60,
+                                                height: 90,
                                                 margin:
                                                     const EdgeInsets.symmetric(
                                                         horizontal: 4),
@@ -843,8 +872,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                                     : null,
                                                 child: Image.asset(
                                                   'assets/images/${card['value'].toLowerCase()}.jpg',
-                                                  width: 80,
-                                                  height: 120,
+                                                  width: 60,
+                                                  height: 90,
                                                   fit: BoxFit.contain,
                                                 ),
                                               ),
@@ -929,8 +958,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                           : 1.0,
                       child: Image.asset(
                         'assets/images/liarbutton.png',
-                        width: 200,
-                        height: 200,
+                        width: 150,
+                        height: 150,
                       ),
                     ),
                   ),

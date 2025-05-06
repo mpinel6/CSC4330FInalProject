@@ -6,6 +6,7 @@ import 'settings.dart';
 import 'lanhome.dart';
 import 'aihome.dart';
 import 'mattgamecoding.dart';
+import 'audio_manager.dart';
 
 void main() {
   runApp(const MyApp());
@@ -43,10 +44,25 @@ class _MyHomePageState extends State<MyHomePage> {
   double _logoOpacity = 0.0;
 
   @override
-  void initState() {
-    super.initState();
-    _selectedIndex = 0;
-    _logoOpacity = 1.0;
+void initState() {
+  super.initState();
+  _selectedIndex = 0;
+  _logoOpacity = 1.0;
+  AudioManager().playMusic('assets/sound/BG_Music.mp3');
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (ModalRoute.of(context)?.isCurrent ?? false) {
+      AudioManager().playMusic('assets/sound/BG_Music.mp3');
+    }
+  }
+
+  @override
+  void dispose() {
+    AudioManager().stopMusic();
+    super.dispose();
   }
 
   void _incrementCounter() {
@@ -173,6 +189,7 @@ class _MyHomePageState extends State<MyHomePage> {
             children: [
               Flexible(
                 child: buildButton('Play LAN', () {
+                  AudioManager().stopMusic();
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const lanhome()),
@@ -181,6 +198,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               Flexible(
                 child: buildButton('Play AI', () {
+                  AudioManager().stopMusic();
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const Gamevsai()),
@@ -257,21 +275,21 @@ class _MyHomePageState extends State<MyHomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   buildButton('Play LAN', () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => const lanhome()),
                     );
                   }),
                   const SizedBox(height: 20),
                   buildButton('Play AI', () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => const Gamevsai()),
                     );
                   }),
                   const SizedBox(height: 20),
                   buildButton('QuickStartTest', () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                           builder: (context) => const mattgamecoding()),
