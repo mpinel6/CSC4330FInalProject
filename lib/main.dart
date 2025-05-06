@@ -48,12 +48,22 @@ void initState() {
   super.initState();
   _selectedIndex = 0;
   _logoOpacity = 1.0;
+  AudioManager().playMusic('assets/sound/BG_Music.mp3');
+  }
 
-  // Delay audio playback to after the first frame to avoid crashes
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    AudioManager().playMusic('assets/sound/BG_Music.mp3');
-  });
-}
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (ModalRoute.of(context)?.isCurrent ?? false) {
+      AudioManager().playMusic('assets/sound/BG_Music.mp3');
+    }
+  }
+
+  @override
+  void dispose() {
+    AudioManager().stopMusic();
+    super.dispose();
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -179,6 +189,7 @@ void initState() {
             children: [
               Flexible(
                 child: buildButton('Play LAN', () {
+                  AudioManager().stopMusic();
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const lanhome()),
@@ -187,6 +198,7 @@ void initState() {
               ),
               Flexible(
                 child: buildButton('Play AI', () {
+                  AudioManager().stopMusic();
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const Gamevsai()),
@@ -263,21 +275,21 @@ void initState() {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   buildButton('Play LAN', () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => const lanhome()),
                     );
                   }),
                   const SizedBox(height: 20),
                   buildButton('Play AI', () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => const Gamevsai()),
                     );
                   }),
                   const SizedBox(height: 20),
                   buildButton('QuickStartTest', () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                           builder: (context) => const mattgamecoding()),
