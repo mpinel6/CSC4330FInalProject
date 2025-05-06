@@ -400,6 +400,35 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         _selectedCards
             .removeWhere((card) => _cardSelections['${card['id']}'] == true);
         _cardSelections.clear();
+
+        // Check if player has won (no cards left)
+        if (_selectedCards.isEmpty) {
+          // Show win dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Game Over!'),
+                content: const Text('Congratulations! You have won the game!'),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('Play Again'),
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close dialog
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const Gamevsai()),
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+          return; // Exit the method after showing win dialog
+        }
       }
       _isPlayer1Turn = false;
       if (!_isPlayer1Turn && _hasSecondPlayer) {
