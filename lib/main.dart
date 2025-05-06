@@ -7,6 +7,8 @@ import 'lanhome.dart';
 import 'aihome.dart';
 import 'mattgamecoding.dart';
 import 'audio_manager.dart';
+import 'create_game_ui.dart';
+import 'join_game_ui.dart';
 
 void main() {
   runApp(const MyApp());
@@ -190,10 +192,7 @@ void initState() {
               Flexible(
                 child: buildButton('Play LAN', () {
                   AudioManager().stopMusic();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const lanhome()),
-                  );
+                  _showLanTestOptions(context);  // Change this line
                 }),
               ),
               Flexible(
@@ -275,10 +274,8 @@ void initState() {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   buildButton('Play LAN', () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const lanhome()),
-                    );
+                    AudioManager().stopMusic();  // Add this line
+                    _showLanTestOptions(context);  // Change this line
                   }),
                   const SizedBox(height: 20),
                   buildButton('Play AI', () {
@@ -348,6 +345,53 @@ void initState() {
       ),
     );
   }
+
+  void _showLanTestOptions(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Colors.brown[200],
+        title: const Text('Multiplayer Options'),
+        content: const Text('Choose a role:'),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('HOST GAME', 
+              style: TextStyle(
+                color: Colors.brown, 
+                fontWeight: FontWeight.bold
+              )
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+              AudioManager().stopMusic();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CreateGamePage()),
+              );
+            },
+          ),
+          TextButton(
+            child: const Text('JOIN GAME', 
+              style: TextStyle(
+                color: Colors.brown, 
+                fontWeight: FontWeight.bold
+              )
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+              AudioManager().stopMusic();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const JoinGamePage()),
+              );
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
 }
 
 class RulesLayout extends StatelessWidget {
