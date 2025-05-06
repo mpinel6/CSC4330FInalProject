@@ -766,9 +766,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                           ),
                         ),
                       Container(
-                        height: 120,
+                        height: 100,
                         width: MediaQuery.of(context).size.width - 40,
-                        margin: const EdgeInsets.only(bottom: 20),
+                        margin: const EdgeInsets.only(bottom: 0),
                         child: Row(
                           children: [
                             Expanded(
@@ -813,8 +813,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                               child: AnimatedContainer(
                                                 duration: const Duration(
                                                     milliseconds: 200),
-                                                width: 80,
-                                                height: 120,
+                                                width: 60,
+                                                height: 90,
                                                 margin:
                                                     const EdgeInsets.symmetric(
                                                         horizontal: 4),
@@ -843,8 +843,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                                     : null,
                                                 child: Image.asset(
                                                   'assets/images/${card['value'].toLowerCase()}.jpg',
-                                                  width: 80,
-                                                  height: 120,
+                                                  width: 60,
+                                                  height: 90,
                                                   fit: BoxFit.contain,
                                                 ),
                                               ),
@@ -929,8 +929,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                           : 1.0,
                       child: Image.asset(
                         'assets/images/liarbutton.png',
-                        width: 200,
-                        height: 200,
+                        width: 150,
+                        height: 150,
                       ),
                     ),
                   ),
