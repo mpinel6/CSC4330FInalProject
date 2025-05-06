@@ -74,6 +74,8 @@ flutter:
     - assets/images/backgroundimage.png
     - assets/images/middlesprite.png
     - assets/images/tableasset.png
+    - assets/images/thumbsup.png
+    - assets/images/liarbutton.png
     - assets/images/Logo.png
     - assets/Music/BG_Music.mp3
     - assets/Music/CardDownSfx.mp3
