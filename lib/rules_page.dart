@@ -277,7 +277,7 @@ class RulesContentState extends State<RulesContent> {
                   "   - 6 Kings\n"
                   "   - 6 Queens\n"
                   "   - 2 Jokers\n\n"
-                  "• The game is designed for 4 players\n"
+                  "• The game is designed for 2 players\n"
                   "• Each player starts with 3 lives\n"
                   "• Deal 5 cards to each player\n"
                   "• Choose a starting player randomly",
@@ -289,13 +289,13 @@ class RulesContentState extends State<RulesContent> {
               content: "On your turn:\n\n"
                   "1. Make a claim about one or more cards from your hand\n"
                   "2. Place these cards face down in the center\n"
-                  "3. Other players can either:\n"
+                  "3. Your opponent can either:\n"
                   "   • Call your bluff: If you were lying, you lose a life. If you were telling the truth, the challenger loses a life\n"
-                  "   • Pass and let play continue to the next player\n\n"
+                  "   • Pass and let play continue to the opponent\n\n"
                   "4. If no one calls your bluff, add your played cards to the discard pile without revealing them\n"
                   "5. Draw replacement cards if available\n"
-                  "6. Play continues clockwise\n\n"
-                  "The game consists of 3 rounds. If multiple players still have lives at the end of the third round, reshuffle the deck and continue until only one player remains.",
+                  "6. Play alternates between players\n\n"
+                  "The game consists of 3 rounds. If both players still have lives at the end of the third round, reshuffle the deck and continue until only one player remains.",
             ),
             const SizedBox(height: 24),
             RulesSection(
@@ -305,7 +305,7 @@ class RulesContentState extends State<RulesContent> {
                   "• Lose a life when:\n"
                   "   - You're caught in a lie (placing cards that don't match your claim)\n"
                   "   - You incorrectly challenge another player's claim\n\n"
-                  "• When you lose all 3 lives, you're eliminated from the game\n"
+                  "• When you lose all 3 lives, your opponent wins\n"
                   "• The last player with any lives remaining wins the game\n"
                   "• If multiple players are still alive after 3 rounds, continue playing until there's a single winner",
             ),
