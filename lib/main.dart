@@ -6,6 +6,7 @@ import 'settings.dart';
 import 'lanhome.dart';
 import 'aihome.dart';
 import 'mattgamecoding.dart';
+import 'audio_manager.dart';
 
 void main() {
   runApp(const MyApp());
@@ -43,11 +44,16 @@ class _MyHomePageState extends State<MyHomePage> {
   double _logoOpacity = 0.0;
 
   @override
-  void initState() {
-    super.initState();
-    _selectedIndex = 0;
-    _logoOpacity = 1.0;
-  }
+void initState() {
+  super.initState();
+  _selectedIndex = 0;
+  _logoOpacity = 1.0;
+
+  // Delay audio playback to after the first frame to avoid crashes
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    AudioManager().playMusic('assets/sound/BG_Music.mp3');
+  });
+}
 
   void _incrementCounter() {
     setState(() {

@@ -2,32 +2,33 @@ import 'package:just_audio/just_audio.dart';
 
 class AudioManager {
   static final AudioManager _instance = AudioManager._internal();
+  final AudioPlayer _player = AudioPlayer();
 
-  factory AudioManager() => _instance;
-
-  late final AudioPlayer _player;
-  bool _isInitialized = false;
+  factory AudioManager() {
+    return _instance;
+  }
 
   AudioManager._internal();
 
   Future<void> playMusic(String assetPath) async {
-    if (!_isInitialized) {
-      _player = AudioPlayer();
-      _isInitialized = true;
-    }
-
     try {
       await _player.setAsset(assetPath);
-      _player.setLoopMode(LoopMode.all);
+      _player.setLoopMode(LoopMode.one); // Loops the background music
       _player.play();
     } catch (e) {
-      print("Error playing music: $e");
+      print("Error playing audio: $e");
     }
   }
 
-  Future<void> stopMusic() async {
-    if (_isInitialized) {
-      await _player.stop();
-    }
+  void stopMusic() {
+    _player.stop();
+  }
+
+  void pauseMusic() {
+    _player.pause();
+  }
+
+  void resumeMusic() {
+    _player.play();
   }
 }
