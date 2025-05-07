@@ -44,26 +44,29 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   int _selectedIndex = 0;
   double _logoOpacity = 0.0;
+  bool _isFirstLoad = true;
 
   @override
-void initState() {
-  super.initState();
-  _selectedIndex = 0;
-  _logoOpacity = 1.0;
-  AudioManager().playMusic('assets/sound/BG_Music.mp3');
+  void initState() {
+    super.initState();
+    _selectedIndex = 0;
+    _logoOpacity = 1.0;
+    if (_isFirstLoad) {
+      AudioManager().playMusic('assets/sound/BG_Music.mp3');
+      _isFirstLoad = false;
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (ModalRoute.of(context)?.isCurrent ?? false) {
-      AudioManager().playMusic('assets/sound/BG_Music.mp3');
-    }
   }
 
   @override
   void dispose() {
-    AudioManager().stopMusic();
+    if (!mounted) {
+      AudioManager().stopMusic();
+    }
     super.dispose();
   }
 
@@ -192,7 +195,7 @@ void initState() {
               Flexible(
                 child: buildButton('Play LAN', () {
                   AudioManager().stopMusic();
-                  _showLanTestOptions(context);  // Change this line
+                  _showLanTestOptions(context);
                 }),
               ),
               Flexible(
@@ -208,6 +211,7 @@ void initState() {
           ),
           const SizedBox(height: 20),
           buildButton('QuickStartTest', () {
+            AudioManager().stopMusic();
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const mattgamecoding()),
@@ -274,8 +278,8 @@ void initState() {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   buildButton('Play LAN', () {
-                    AudioManager().stopMusic();  // Add this line
-                    _showLanTestOptions(context);  // Change this line
+                    AudioManager().stopMusic();
+                    _showLanTestOptions(context);
                   }),
                   const SizedBox(height: 20),
                   buildButton('Play AI', () {
@@ -286,6 +290,7 @@ void initState() {
                   }),
                   const SizedBox(height: 20),
                   buildButton('QuickStartTest', () {
+                    AudioManager().stopMusic();
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
