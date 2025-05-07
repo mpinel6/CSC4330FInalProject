@@ -1154,7 +1154,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                   padding:
                                       const EdgeInsets.symmetric(horizontal: 4),
                                   child: Image.asset(
-                                    'assets/images/back.jpg',
+                                    'assets/images/${_lastPlayedCards.last['value'].toLowerCase()}.jpg' ,
+                                    //assets/images/back.jpg
                                     width: 80,
                                     height: 120,
                                   ),
