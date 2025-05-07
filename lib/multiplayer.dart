@@ -247,21 +247,27 @@ Future<bool> joinGameSession(String code, String hostIp) async {
 void sendGameAction(String action, Map<String, dynamic> actionData) {
   try {
     if (!_isHost && _connectedClients.isNotEmpty) {
-      // Format the action message
+      // Format the action message with the data field included
       final gameAction = {
         'type': 'game_action',
         'action': action,
-        'playerName': actionData['playerName'] ?? 'Unknown',
+        'data': actionData,  // THIS IS THE CRITICAL FIX - include the actionData
         'timestamp': DateTime.now().millisecondsSinceEpoch
       };
       
       print('CLIENT: Sending action: $action');
       
-      // Serialize with newline terminator for reliable transmission
+      // Send twice for critical actions like ready status
       final jsonMessage = jsonEncode(gameAction) + '\n';
       _connectedClients.first.write(jsonMessage);
       
-      // Debug
+      // For clientReadyToggle, send a second time for reliability
+      if (action == 'clientReadyToggle') {
+        Future.delayed(Duration(milliseconds: 100), () {
+          _connectedClients.first.write(jsonMessage);
+        });
+      }
+      
       print('CLIENT: Action sent successfully');
     }
   } catch (e) {
