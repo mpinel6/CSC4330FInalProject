@@ -307,17 +307,14 @@ class RulesContentState extends State<RulesContent> {
                   "   - You incorrectly challenge another player's claim\n\n"
                   "• When you lose all 3 lives, your opponent wins\n"
                   "• The last player with any lives remaining wins the game\n"
-                  "• If multiple players are still alive after 3 rounds, continue playing until there's a single winner",
+                  "• If both players are still alive after 3 rounds, continue playing until there's a single winner",
             ),
             const SizedBox(height: 24),
             RulesSection(
               key: _sectionKeys[4],
               title: "Special Rules",
               content:
-                  "• Joker's Rule: Jokers are wild cards and can be played as any card type (Ace, King, or Queen)\n"
-                  "• Final Countdown: When the deck runs out, everyone gets one last turn to try to eliminate opponents\n"
-                  "• Bluff Master: If you successfully make 3 bluffs in a row without being challenged, you gain an extra life (max 3)\n"
-                  "• Card Counter: You may look through the discard pile once per round",
+                  "• Joker's Rule: Jokers are wild cards and can be played as any card type (Ace, King, or Queen)\n",
             ),
             const SizedBox(height: 32),
             Center(
