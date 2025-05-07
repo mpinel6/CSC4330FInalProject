@@ -51,14 +51,25 @@ void _setUpMessageListener() {
               _broadcastState();
             }
           }
+          else if (action == 'clientReadyToggle' && _multiplayerService.isHost) {
+            // Host processing client's ready toggle
+            print('Host received client ready toggle');
+            final isClientReady = data['data']['isClientReady'] ?? false;
+            
+            // Update the state with the new ready status
+            _updateState({'isClientReady': isClientReady});
+            
+            // Broadcast to all players (including the sender for confirmation)
+            _broadcastState();
+          }
           else if (action == 'dealCards' && _multiplayerService.isHost) {
             // Host should deal cards
             print('Host received deal cards request');
             // No implementation needed as the host UI should handle this
           }
+
           else if (action == 'playCards' && _multiplayerService.isHost) {
             // Host processing client's played cards
-            print('Host received played cards from client');
             final playedCards = data['data']['playedCards'];
             
             // Update host state to reflect client's move
@@ -69,9 +80,19 @@ void _setUpMessageListener() {
               'logMessage': 'Client played ${playedCards.length} card(s)'
             };
             
+            // ADD THIS NEW CODE: Update client's cards and clear selections
+            final updatedPlayer2Cards = List<Map<String, dynamic>>.from(_currentState['player2Cards'] ?? []);
+            updatedPlayer2Cards.removeWhere((card) => 
+              playedCards.any((played) => played['id'] == card['id']));
+            
+            gameState['player2Cards'] = updatedPlayer2Cards;
+            gameState['player2CardSelections'] = {};
+            
             _updateState(gameState);
             _broadcastState();
           }
+
+
           else if (action == 'checkLiar' && _multiplayerService.isHost) {
             // Host processing client's liar call
             print('Host received liar call from client');

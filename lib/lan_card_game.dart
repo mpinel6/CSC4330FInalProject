@@ -32,6 +32,9 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
   List<String> gameLog = [];
   
   // Game state properties
+  // Add these with other state properties:
+  bool _isHostReady = false;
+  bool _isClientReady = false;
   int _selectedIndex = 0;
   bool _hasDealt = false;
   bool _hasSecondPlayer = true;
@@ -166,6 +169,10 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
             _isPlayer1Turn = state['isPlayer1Turn'] ?? _isPlayer1Turn;
             _hasPressedLiar = state['hasPressedLiar'] ?? _hasPressedLiar;
             _isPlayerCallingLiar = state['isPlayerCallingLiar'] ?? _isPlayerCallingLiar;
+
+            _isHostReady = state['isHostReady'] ?? _isHostReady;
+            _isClientReady = state['isClientReady'] ?? _isClientReady;
+
             _selectedCards = List<Map<String, dynamic>>.from(state['selectedCards'] ?? _selectedCards);
             _player2Cards = List<Map<String, dynamic>>.from(state['player2Cards'] ?? _player2Cards);
             _topLeftCard = state['topLeftCard'] ?? _topLeftCard;
@@ -329,10 +336,36 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
       _gameStateManager.updateState(gameState);
     }
   }
+      void _toggleReady() {
+        final bool newReadyState = widget.isHost ? !_isHostReady : !_isClientReady;
+        
+        setState(() {
+          if (widget.isHost) {
+            _isHostReady = newReadyState;
+            _gameStateManager.updateState({'isHostReady': newReadyState});
+          } else {
+            _isClientReady = newReadyState;
+            widget.multiplayerService.sendGameAction('clientReadyToggle', {
+              'isClientReady': newReadyState
+            });
+          }
+        });
+      }
 
   // Deal cards across the network
   void _dealCards() {
-    if (widget.isHost) {
+    
+      if (widget.isHost) {
+      // Only proceed if both players are ready
+      if (!(_isHostReady && _isClientReady)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Waiting for both players to be ready!'),
+            backgroundColor: Colors.brown,
+          ),
+        );
+        return;
+      }
       final random = Random();
       final shuffledDeck = List<String>.from(_deck)..shuffle(random);
       
@@ -369,15 +402,22 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
       
       // Update state with dealt cards
       final gameState = {
-        'hasDealt': true,
-        'cardsJustDealt': true,
-        'selectedCards': player1Cards,
-        'player2Cards': player2Cards,
-        'topLeftCard': topCard,
+        'hasDealt': true,  // TRUE to show cards were dealt
+        'isPlayer1Turn': true,
+        'hasPressedLiar': false,
+        'isPlayerCallingLiar': false,
+        'selectedCards': player1Cards,  // Use the newly created cards
+        'player2Cards': player2Cards,   // Use the newly created cards
+        'topLeftCard': topCard,         // Use the selected top card
         'cardSelections': p1Selections,
         'player2CardSelections': p2Selections,
+        'lastPlayedCards': [],
+        'player1Tokens': 3,
+        'player2Tokens': 3,
+        // Keep ready states as they are - don't reset them
+        'cardsJustDealt': true,  // Add this to trigger animations
         'deck': shuffledDeck,
-        'logMessage': 'Cards dealt - ${topCard}\'s TABLE'
+        'logMessage': 'Cards dealt - ${topCard}\'s TABLE'  // Better message
       };
       
       _gameStateManager.updateState(gameState);
@@ -456,18 +496,26 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
       
       _gameStateManager.updateState(gameState);
     } else {
-      // Client implementation
-      final selectedCardsList = _selectedCards
-          .where((card) => _cardSelections['${card['id']}'] == true)
-          .toList();
-      
-      if (selectedCardsList.isEmpty) return;
-      
-      // Send played cards to host
-      widget.multiplayerService.sendGameAction('playCards', {
-        'playedCards': selectedCardsList
-      });
-    }
+    // Client implementation
+    final selectedCardsList = _player2Cards // CHANGED: Use player2Cards for client
+        .where((card) => _player2CardSelections['${card['id']}'] == true) // CHANGED: Use player2CardSelections
+        .toList();
+    
+    if (selectedCardsList.isEmpty) return;
+    
+    // Send played cards to host
+    widget.multiplayerService.sendGameAction('playCards', {
+      'playedCards': selectedCardsList
+    });
+    
+    // ADDED: Update client UI immediately for feedback
+    setState(() {
+      // Remove played cards from hand
+      _player2Cards.removeWhere(
+          (card) => _player2CardSelections['${card['id']}'] == true);
+      _player2CardSelections.clear();
+    });
+  }
   }
 
   void _checkLiar() {
@@ -500,19 +548,19 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
       Future.delayed(const Duration(milliseconds: 4000), () {
         if (!mounted) return;
         
-        final gameState = {
+        final Map<String, dynamic> gameState = {
           'hasPressedLiar': true,
           'isPlayerCallingLiar': false
         };
-        
+          
         // Update tokens based on the result
-        // if (allCardsMatch) {
-        //   gameState['player1Tokens'] = _player1Tokens - 1;
-        //   gameState['logMessage'] = 'Host called Liar incorrectly and lost a token';
-        // } else {
-        //   gameState['player2Tokens'] = _player2Tokens - 1;
-        //   gameState['logMessage'] = 'Host called Liar correctly! Client lost a token';
-        // }
+        if (allCardsMatch) {
+          gameState['player1Tokens'] = _player1Tokens - 1;
+          gameState['logMessage'] = 'Host called Liar incorrectly and lost a token';
+        } else {
+          gameState['player2Tokens'] = _player2Tokens - 1;
+          gameState['logMessage'] = 'Host called Liar correctly! Client lost a token';
+        }
         
         _gameStateManager.updateState(gameState);
       });
@@ -853,31 +901,102 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
                               ),
                             ),
                           ],
-                          if (!_hasDealt) ...[
-                            ElevatedButton(
-                              onPressed: _dealCards,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black.withOpacity(0.5),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 40, vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                          // Replace the if (!_hasDealt) section with:
+                            if (!_hasDealt) ...[
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.6),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                elevation: 6,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text(
+                                          'Host: ',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Icon(
+                                          _isHostReady ? Icons.check_circle : Icons.circle_outlined,
+                                          color: _isHostReady ? Colors.green : Colors.grey,
+                                          size: 28,
+                                        ),
+                                        const SizedBox(width: 24),
+                                        const Text(
+                                          'Client: ',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Icon(
+                                          _isClientReady ? Icons.check_circle : Icons.circle_outlined,
+                                          color: _isClientReady ? Colors.green : Colors.grey,
+                                          size: 28,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 20),
+                                    ElevatedButton(
+                                      onPressed: _toggleReady,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.brown[600],
+                                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        widget.isHost
+                                          ? (_isHostReady ? 'Not Ready' : 'Ready')
+                                          : (_isClientReady ? 'Not Ready' : 'Ready'),
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    if (widget.isHost) 
+                                      ElevatedButton(
+                                        onPressed: (_isHostReady && _isClientReady) ? _dealCards : null,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: (_isHostReady && _isClientReady) 
+                                            ? Colors.black.withOpacity(0.5)
+                                            : Colors.grey.withOpacity(0.5),
+                                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          elevation: 6,
+                                        ),
+                                        child: const Text(
+                                          'Deal Cards',
+                                          style: _gameStatusStyle,
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
-                              child: const Text(
-                                'Deal Cards',
-                                style: _gameStatusStyle,
-                              ),
-                            ),
-                          ],
+                            ],
                         ],
                       ),
                     ),
                   ),
                 ),
                 // Card hand display
-                if (_hasDealt && ((widget.isHost && _isPlayer1Turn) || (!widget.isHost && !_isPlayer1Turn)))
+                if (_hasDealt && isMyTurn)
                   Column(
                     children: [
                       if (_cardSelections.values.any((selected) => selected))
@@ -904,12 +1023,12 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
                                 child: ListView.builder(
                                   shrinkWrap: true,
                                   scrollDirection: Axis.horizontal,
-                                  itemCount: _selectedCards.length,
+                                  itemCount: widget.isHost ? _selectedCards.length : _player2Cards.length, // Show different cards based on player
                                   itemBuilder: (context, index) {
-                                    final card = _selectedCards[index];
-                                    final isSelected =
-                                        _cardSelections['${card['id']}'] ??
-                                            false;
+                                    final card = widget.isHost ? _selectedCards[index] : _player2Cards[index]; // Choose correct card set
+                                    final isSelected = widget.isHost
+                                        ? (_cardSelections['${card['id']}'] ?? false)
+                                        : (_player2CardSelections['${card['id']}'] ?? false); // Use correct selections
                                     final cardId = '${card['id']}';
 
                                     _initializeCardLiftAnimation(cardId);
@@ -933,8 +1052,11 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
                                             child: GestureDetector(
                                               onTap: () {
                                                 setState(() {
-                                                  _cardSelections[cardId] =
-                                                      !isSelected;
+                                                  if (widget.isHost) {
+                                                    _cardSelections[cardId] = !isSelected;
+                                                  } else {
+                                                    _player2CardSelections[cardId] = !isSelected;
+                                                  }
                                                 });
                                               },
                                               child: AnimatedContainer(
