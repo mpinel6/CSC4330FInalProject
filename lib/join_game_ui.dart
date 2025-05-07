@@ -67,7 +67,6 @@ void initState() {
   
   @override
   void dispose() {
-    _codeController.dispose();
     _stateSubscription?.cancel();
     super.dispose();
   }
@@ -101,29 +100,191 @@ void _scanForGames() async {
   }
 }
   
-  Future<void> _joinGame(String hostIp) async {
-    final code = _codeController.text.trim();
-    if (code.length != 6) {
-      setState(() {
-        _statusMessage = 'Please enter a valid 6-digit code';
-      });
-      return;
-    }
-    
+  Future<void> _joinGame(String hostIp, String code) async {
+  if (code.length != 6) {
     setState(() {
-      _statusMessage = 'Connecting to host...';
+      _statusMessage = 'Please enter a valid 6-digit code';
     });
-    
-    final success = await _multiplayerService.joinGameSession(code, hostIp);
-    
-    if (success) {
-      _connectedCode = code;
-      // Wait for host to start the game
-      setState(() {
-        _statusMessage = 'Connected! Waiting for host to start the game...';
-      });
-    }
+    return;
   }
+  
+  setState(() {
+    _statusMessage = 'Connecting to host...';
+  });
+  
+  final success = await _multiplayerService.joinGameSession(code, hostIp);
+  
+  if (success) {
+    _connectedCode = code;
+    setState(() {
+      _statusMessage = 'Connected! Waiting for host to start the game...';
+    });
+  }
+}
+
+void _showGameCodeDialog(String host, String deviceName) {
+  final codeController = TextEditingController();
+  bool isConnecting = false;
+  bool isConnected = false;
+  
+  showDialog(
+    context: context,
+    barrierDismissible: true, // Always allow barrier dismissal
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) {
+        // REMOVE the problematic code block:
+        // WidgetsBinding.instance.addPostFrameCallback((_) {
+        //   if (Navigator.canPop(context)) {
+        //     Navigator.of(context).setCanPop(!isConnected);
+        //   }
+        // });
+        
+        // Wrap the AlertDialog with WillPopScope to control dismissibility
+        return WillPopScope(
+          // Only allow pop if not connected
+          onWillPop: () async => !isConnected,
+          child: AlertDialog(
+            title: Text('Connect to $deviceName'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Enter the 6-digit game code:'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: codeController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: '000000',
+                  ),
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 8,
+                  ),
+                  enabled: !isConnecting && !isConnected,
+                ),
+              ],
+            ),
+            // Rest of the dialog implementation remains unchanged
+            actions: [
+              // Only show Cancel button AFTER successful connection
+              // if (isConnected) 
+              //   TextButton(
+              //     onPressed: () => Navigator.pop(context),
+              //     child: Text('Cancel', style: TextStyle(color: Colors.black)),
+              //   ),
+              Center(
+    child: ElevatedButton(
+      // Fix the button implementation by adding actual functionality
+      onPressed: isConnecting || isConnected ? null : () async {
+        // Get the code and validate
+        final code = codeController.text.trim();
+        if (code.length != 6) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enter a valid 6-digit code'))
+          );
+          return;
+        }
+        
+        // Set connecting state
+        setState(() {
+          isConnecting = true;
+        });
+        
+        // Attempt to join game
+        final success = await _multiplayerService.joinGameSession(code, host);
+        
+        // Handle result
+        if (success) {
+          // Update parent state
+          _connectedCode = code;
+          this.setState(() {
+            _statusMessage = 'Connected! Waiting for host to start the game...';
+          });
+          
+          // Update dialog state
+          setState(() {
+            isConnecting = false;
+            isConnected = true;
+          });
+        } else {
+          // Show error and reset
+          setState(() {
+            isConnecting = false;
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to connect. Please try again.'))
+          );
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isConnected ? Colors.green[600] : Colors.brown[600],
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      ),
+      child: isConnecting 
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 20, 
+                height: 20, 
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+              ),
+              const SizedBox(width: 12),
+              const Text('Connecting...', style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ))
+            ],
+          )
+        : isConnected
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                const Text('Success! Waiting for host...', style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                )),
+                const SizedBox(width: 8),
+                const SizedBox(
+                  width: 16, 
+                  height: 16, 
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                ),
+              ],
+            )
+          : const Text(
+              'Connect',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+    ),
+  ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+  
+  // Set up listener to close dialog when game starts
+  _multiplayerService.gameDataStream.where((data) => 
+    data is Map<String, dynamic> && data['type'] == 'game_start'
+  ).listen((_) {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context); // Close the dialog when game starts
+    }
+  });
+}
   
   // FIXED: Removed unused _navigateToGame method
 
@@ -173,15 +334,15 @@ void _scanForGames() async {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              controller: _codeController,
-              decoration: const InputDecoration(
-                labelText: 'Enter 6-digit game code',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-            ),
+            // TextField(
+            //   controller: _codeController,
+            //   decoration: const InputDecoration(
+            //     labelText: 'Enter 6-digit game code',
+            //     border: OutlineInputBorder(),
+            //   ),
+            //   keyboardType: TextInputType.number,
+            //   maxLength: 6,
+            // ),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -207,8 +368,9 @@ void _scanForGames() async {
                   color: _statusMessage!.contains('error') || _statusMessage!.contains('Failed')
                       ? Colors.red
                       : _statusMessage!.contains('Connected!')
-                          ? Colors.green[900]
-                          : Colors.green[700],
+                          ? const Color.fromARGB(255, 0, 0, 0)
+                          : const Color.fromARGB(255, 0, 0, 0),
+                  fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -230,7 +392,7 @@ void _scanForGames() async {
                             title: Text(deviceName),
                             subtitle: Text(host),
                             trailing: const Icon(Icons.videogame_asset),
-                            onTap: () => _joinGame(host),
+                            onTap: () => _showGameCodeDialog(host, deviceName),
                           ),
                         );
                       },
