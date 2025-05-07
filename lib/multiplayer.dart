@@ -2,9 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:device_info_plus/device_info_plus.dart';
 
 class MultiplayerService {
+
+  String _deviceName = "Unknown Device";
+  String get deviceName => _deviceName;
+
   // Server socket for the host
   ServerSocket? _serverSocket;
   
@@ -47,7 +52,7 @@ class MultiplayerService {
       
       // Start the server
       _serverSocket = await ServerSocket.bind(InternetAddress.anyIPv4, _port);
-      _connectionStatusController.add('Hosting game with code: $_sessionCode');
+      //_connectionStatusController.add('Hosting game with code: $_sessionCode');
       _isHost = true;
       
       // Listen for client connections
@@ -154,13 +159,10 @@ Future<bool> joinGameSession(String code, String hostIp) async {
 }
   
   // Handle a new client connection
-    void _handleClientConnection(Socket socket) {
-  // Add to connected clients
-  _connectedClients.add(socket);
-  
-  // Update player count immediately
-  _playerCount = _connectedClients.length + 1; // +1 for host
-  _connectionStatusController.add('Player connected! Total: $_playerCount');
+void _handleClientConnection(Socket socket) {
+  // Don't immediately announce a connection
+  // Wait for proper join message first
+  bool isVerifiedClient = false;
   
   // Listen for messages from this client
   socket.listen(
@@ -178,23 +180,40 @@ Future<bool> joinGameSession(String code, String hostIp) async {
               // Process join message
               final code = message['code'];
               if (code == _sessionCode) {
+                // NOW we can add the client as it's officially joining
+                if (!isVerifiedClient) {
+                  _connectedClients.add(socket);
+                  _playerCount = _connectedClients.length;
+                  _connectionStatusController.add('Player connected!');
+                  isVerifiedClient = true;
+                }
+                
                 socket.write(jsonEncode({
                   'type': 'join_response',
                   'success': true,
-                  'message': 'Connected to game'
+                  'message': 'Connected to game',
+                  'deviceName': _deviceName
                 }) + '\n');
               }
+            }
+            // Handle device info request
+            else if (message['type'] == 'device_info_request') {
+              // Send device info to client
+              socket.write(jsonEncode({
+                'type': 'device_info_response',
+                'deviceName': _deviceName
+              }) + '\n');
             } 
+            // ADD THIS SECTION - Handle game actions from client
             else if (message['type'] == 'game_action') {
-              // Forward game actions to controller
               print('HOST: Received game action: ${message['action']}');
+              
+              // Forward all game actions to the game state manager via stream
               _gameDataController.add(message);
               
-              // Also forward to other clients for sync
-              for (final client in _connectedClients) {
-                if (client != socket) {
-                  client.write(rawMessage + '\n');
-                }
+              // Specific handling for critical actions
+              if (message['action'] == 'clientReadyToggle') {
+                print('HOST: Received client ready toggle: ${message['data']}');
               }
             }
           } catch (e) {
@@ -206,24 +225,27 @@ Future<bool> joinGameSession(String code, String hostIp) async {
       }
     },
     onDone: () {
-      _connectedClients.remove(socket);
-      _playerCount = _connectedClients.length + 1; // +1 for host
-      _connectionStatusController.add('Player disconnected! Total: $_playerCount');
+      // Only announce disconnection for verified clients
+      if (isVerifiedClient) {
+        _connectedClients.remove(socket);
+        _playerCount = _connectedClients.length;
+        _connectionStatusController.add('Player disconnected!');
+      }
     },
     onError: (error) {
       print('Socket error: $error');
       _connectedClients.remove(socket);
-      _playerCount = _connectedClients.length + 1; // +1 for host
+      _playerCount = _connectedClients.length;
       _connectionStatusController.add('Connection error: $error');
     }
   );
 }
-  
+
   // Broadcast the current player list to all clients
   void _broadcastPlayerList() {
     final playerListMessage = jsonEncode({
       'type': 'player_list',
-      'count': _connectedClients.length + 1, // +1 for the host
+      'count': _connectedClients.length , // +1 for the host
     });
     
     for (final client in _connectedClients) {
@@ -415,5 +437,27 @@ void broadcastRawMessage(String jsonMessage) {
 }
 void addToGameData(Map<String, dynamic> data) {
   _gameDataController.add(data);
+}
+
+// Add this method to initialize the device name
+Future<void> initDeviceName() async {
+  try {
+    final deviceInfo = DeviceInfoPlugin();
+    
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final androidInfo = await deviceInfo.androidInfo;
+      _deviceName = androidInfo.model; // e.g., "Pixel 6"
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final iosInfo = await deviceInfo.iosInfo;
+      _deviceName = iosInfo.name; // e.g., "iPhone 13"
+    } else {
+      _deviceName = 'Desktop Device';
+    }
+    
+    print('Device name initialized: $_deviceName');
+  } catch (e) {
+    print('Error getting device name: $e');
+    _deviceName = 'Flutter Device';
+  }
 }
 }

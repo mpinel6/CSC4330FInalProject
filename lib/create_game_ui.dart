@@ -20,7 +20,7 @@ class _CreateGamePageState extends State<CreateGamePage> {
   String? _gameCode;
   String? _localIp;
   String? _statusMessage;
-  int _playerCount = 1;
+  bool _playerConnected = false;
   
   @override
   void initState() {
@@ -31,11 +31,11 @@ class _CreateGamePageState extends State<CreateGamePage> {
       setState(() {
         _statusMessage = status;
         
-        // Extract player count from status if it contains that info
+        // Update connection status flag
         if (status.contains('Player connected')) {
-          _playerCount++;
+          _playerConnected = true;
         } else if (status.contains('disconnected')) {
-          if (_playerCount > 1) _playerCount--;
+          _playerConnected = false;
         }
       });
     });
@@ -48,6 +48,9 @@ class _CreateGamePageState extends State<CreateGamePage> {
   }
   
   Future<void> _initHosting() async {
+
+    await _multiplayerService.initDeviceName();
+    
     try {
       _localIp = await _networkDiscovery.getLocalIpAddress();
       final code = await _multiplayerService.createGameSession();
@@ -71,9 +74,9 @@ class _CreateGamePageState extends State<CreateGamePage> {
   }
   
   void _startGame() {
-  if (_playerCount < 2) {
+  if (_playerConnected = false) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Need at least one more player to start')),
+      const SnackBar(content: Text('Need a connected player to start')),
     );
     return;
   }
@@ -183,10 +186,10 @@ class _CreateGamePageState extends State<CreateGamePage> {
                   style: const TextStyle(fontSize: 14),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  "Players connected: $_playerCount",
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                // Text(
+                //   "Players connected",
+                //   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                // ),
                 if (_statusMessage != null) ...[
                   const SizedBox(height: 16),
                   Text(

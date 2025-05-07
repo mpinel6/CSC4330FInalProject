@@ -2,8 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'multiplayer.dart';
 import 'network_discovery.dart';
-import 'sync_test_game.dart';
-import 'game_state_manager.dart';
 import 'lan_card_game.dart';
 
 class JoinGamePage extends StatefulWidget {
@@ -19,13 +17,13 @@ class _JoinGamePageState extends State<JoinGamePage> {
   final MultiplayerService _multiplayerService = MultiplayerService();
   
   // Game state management
-  GameStateManager? _gameStateManager;
   StreamSubscription? _stateSubscription;
   String? _connectedCode;
   
   bool _isScanning = false;
   bool _isNavigating = false;
-  List<String> _availableHosts = [];
+  // FIXED: Changed from List<String> to Map<String, String> for IP->name mapping
+  final Map<String, String> _availableHosts = {};
   String? _statusMessage;
   
  @override
@@ -43,20 +41,20 @@ void initState() {
   _multiplayerService.gameDataStream.listen(
     (data) {
       // Debug print
-      print('Client received message: $data');
+      // print('Client received message: $data');
       
       // Safely handle game start notification
       if (data != null && 
           data is Map<String, dynamic> && 
           data['type'] == 'game_start') {
-        print('Client received game start command');
+        // print('Client received game start command');
         
         // Use the safer navigation method
         _safeNavigateToGame();
       }
     },
     onError: (error) {
-      print('Error in game data stream: $error');
+      // print('Error in game data stream: $error');
       if (mounted) {
         setState(() {
           _statusMessage = 'Connection error: $error';
@@ -71,42 +69,37 @@ void initState() {
   void dispose() {
     _codeController.dispose();
     _stateSubscription?.cancel();
-    //_multiplayerService.dispose();
     super.dispose();
   }
   
-  Future<void> _scanForGames() async {
-    setState(() {
-      _isScanning = true;
-      _availableHosts = [];
-    });
+  // FIXED: Removed duplicate declaration of _availableHosts
+
+void _scanForGames() async {
+  setState(() {
+    _isScanning = true;
+    _statusMessage = 'Scanning for games...';
+    _availableHosts.clear();
+  });
+  
+  try {
+    // Replace scanNetwork with getHostsWithNames to retrieve actual device names
+    final Map<String, String> hostsWithNames = await _networkDiscovery.getHostsWithNames(8888);
     
-    try {
-      final hosts = await _networkDiscovery.scanNetwork(8888);
-      
-      setState(() {
-        _availableHosts = hosts;
-        // Always add the emulator host option
-        if (!_availableHosts.contains('10.0.2.2')) {
-          _availableHosts.add('10.0.2.2');
-        }
-        
-        _isScanning = false;
-        _statusMessage = hosts.isEmpty 
-            ? 'No games found on local network. Try the emulator option (10.0.2.2).' 
-            : 'Found ${hosts.length} potential hosts';
-      });
-    } catch (e) {
-      setState(() {
-        _isScanning = false;
-        _statusMessage = 'Scan error: $e';
-        // Add emulator host option even after error
-        if (_availableHosts.isEmpty) {
-          _availableHosts.add('10.0.2.2');
-        }
-      });
-    }
+    setState(() {
+      // Use the actual device names returned by getHostsWithNames
+      _availableHosts.addAll(hostsWithNames);
+      _isScanning = false;
+      _statusMessage = _availableHosts.isEmpty 
+        ? 'No games found on local network.' 
+        : 'Found ${_availableHosts.length} available games';
+    });
+  } catch (e) {
+    setState(() {
+      _isScanning = false;
+      _statusMessage = 'Error scanning: $e';
+    });
   }
+}
   
   Future<void> _joinGame(String hostIp) async {
     final code = _codeController.text.trim();
@@ -132,62 +125,40 @@ void initState() {
     }
   }
   
-  void _navigateToGame() {
-    // Prevent multiple navigations
-    if (_stateSubscription == null) return;
-    
-    _stateSubscription!.cancel();
-    _stateSubscription = null;
-    
-    // Navigate to the game screen
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => SyncTestGame(
-          multiplayerService: _multiplayerService,
-          isHost: false,
-          gameCode: _connectedCode!,
-        ),
-      ),
-    );
-  }
+  // FIXED: Removed unused _navigateToGame method
 
-  // Add this method to safely navigate to the game
-void _safeNavigateToGame() {
-  if (_isNavigating) return;
-  _isNavigating = true;
-  
-  print('Preparing for safe navigation to game...');
-  
-  // Use Navigator.of(context).pushAndRemoveUntil for more stable navigation
-  Future.delayed(Duration(milliseconds: 200), () {
-    if (!mounted) {
-      print('Widget not mounted, aborting navigation');
-      _isNavigating = false;
-      return;
-    }
+  // Safe navigation method
+  void _safeNavigateToGame() {
+    if (_isNavigating) return;
+    _isNavigating = true;
     
-    try {
-      print('Attempting navigation to SyncTestGame...');
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => LanCardGame(
-            multiplayerService: _multiplayerService,
-            isHost: false,
-            gameCode: _connectedCode ?? 'unknown',
-          ),
-        ),
-      );
-    } catch (e) {
-      print('Navigation failed: $e');
-      _isNavigating = false;
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Navigation error: $e')),
-        );
+    // Use Navigator.of(context).pushAndRemoveUntil for more stable navigation
+    Future.delayed(Duration(milliseconds: 200), () {
+      if (!mounted) {
+        _isNavigating = false;
+        return;
       }
-    }
-  });
-}
+      
+      try {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => LanCardGame(
+              multiplayerService: _multiplayerService,
+              isHost: false,
+              gameCode: _connectedCode ?? 'unknown',
+            ),
+          ),
+        );
+      } catch (e) {
+        _isNavigating = false;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Navigation error: $e')),
+          );
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -226,15 +197,6 @@ void _safeNavigateToGame() {
                         : const Text('FIND GAMES ON NETWORK'),
                   ),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () => _joinGame('10.0.2.2'), 
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber[700],
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('EMULATOR TEST'),
-                ),
               ],
             ),
             if (_statusMessage != null) ...[
@@ -259,14 +221,16 @@ void _safeNavigateToGame() {
                   : ListView.builder(
                       itemCount: _availableHosts.length,
                       itemBuilder: (context, index) {
-                        final isEmulator = _availableHosts[index] == '10.0.2.2';
+                        // FIXED: Properly access Map keys and values
+                        final host = _availableHosts.keys.elementAt(index);
+                        final deviceName = _availableHosts[host] ?? 'Unknown Device';
+                        
                         return Card(
-                          color: isEmulator ? Colors.amber[100] : null,
                           child: ListTile(
-                            title: Text(isEmulator ? 'Emulator Test Host' : 'Game Host ${index + 1}'),
-                            subtitle: Text(_availableHosts[index]),
+                            title: Text(deviceName),
+                            subtitle: Text(host),
                             trailing: const Icon(Icons.videogame_asset),
-                            onTap: () => _joinGame(_availableHosts[index]),
+                            onTap: () => _joinGame(host),
                           ),
                         );
                       },
