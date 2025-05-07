@@ -331,9 +331,32 @@ void _showStartGameDialog() {
           
           const SizedBox(height: 16), // Spacing between buttons
           
-          // CANCEL button - moved here from actions
+          // CANCEL button 
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              // Send cancel command to clients first
+              _multiplayerService.sendGameCancelCommand();
+              
+              // Small delay to ensure message is sent before closing connection
+              await Future.delayed(Duration(milliseconds: 300));
+              
+              // Reset the connection and navigate if successful
+              final success = await _multiplayerService.resetConnection();
+              
+              // Close the dialog
+              Navigator.pop(context);
+              
+              if (success) {
+                // Navigate to home screen
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              } else {
+                // Just update UI state if navigation fails
+                setState(() {
+                  _playerConnected = false;
+                  _statusMessage = 'Game canceled. Network reset failed.';
+                });
+              }
+            },
             child: const Text('CANCEL'),
           ),
         ],

@@ -460,4 +460,76 @@ Future<void> initDeviceName() async {
     _deviceName = 'Flutter Device';
   }
 }
+
+/// Resets all network connections and state to allow for clean reconnection.
+/// Returns true if successful, which UI can use to trigger navigation.
+Future<bool> resetConnection() async {
+  try {
+    // Notify about the reset
+    _connectionStatusController.add('Resetting connection...');
+    
+    // Close server socket (if host)
+    if (_serverSocket != null) {
+      await _serverSocket!.close();
+      _serverSocket = null;
+    }
+    
+    // Close all client connections
+    for (final client in _connectedClients) {
+      try {
+        await client.close();
+      } catch (e) {
+        print('Error closing client socket: $e');
+      }
+    }
+    
+    // Reset connection state
+    _connectedClients = [];
+    _sessionCode = null;
+    _isHost = false;
+    _playerCount = 1;
+    
+    // Notify that reset is complete
+    _connectionStatusController.add('Connection reset complete');
+    
+    return true; // Return success
+  } catch (e) {
+    print('Error resetting connection: $e');
+    _connectionStatusController.add('Error resetting connection: $e');
+    return false; // Return failure
+  }
+}
+
+/// Sends a game cancellation notification to all connected clients
+void sendGameCancelCommand() {
+  final cancelCommand = {
+    'type': 'game_state_update',  // CRITICAL CHANGE: Use game_state_update instead of game_canceled
+    'data': {
+      'gameCancelled': true,      // Add this flag to the game state
+      'timestamp': DateTime.now().millisecondsSinceEpoch
+    }
+  };
+  
+  // Add to game data stream for any local listeners
+  _gameDataController.add(cancelCommand);
+  
+  // Also broadcast using existing reliable method
+  if (_isHost) {
+    final jsonStr = jsonEncode(cancelCommand) + '\n';
+    
+    // Send to all connected clients
+    for (final client in _connectedClients) {
+      try {
+        client.write(jsonStr);
+        // Send twice for reliability
+        Future.delayed(Duration(milliseconds: 10), () {
+          client.write(jsonStr);
+        });
+      } catch (e) {
+        print('Error sending cancel command: $e');
+      }
+    }
+  }
+}
+
 }

@@ -37,22 +37,39 @@ void initState() {
     }
   });
   
-  // Add listener for game data updates with better error handling
+  // Add the game data stream listener right here
   _multiplayerService.gameDataStream.listen(
-    (data) {
-      // Debug print
-      // print('Client received message: $data');
-      
-      // Safely handle game start notification
-      if (data != null && 
-          data is Map<String, dynamic> && 
-          data['type'] == 'game_start') {
-        // print('Client received game start command');
-        
-        // Use the safer navigation method
+  (data) {
+    if (data != null && data is Map<String, dynamic>) {
+      // Handle game start
+      if (data['type'] == 'game_start') {
         _safeNavigateToGame();
       }
-    },
+      // Handle game state update with cancellation flag
+      else if (data['type'] == 'game_state_update' && 
+              data.containsKey('data') &&
+              data['data'] is Map<String, dynamic> &&
+              data['data']['gameCancelled'] == true) {
+        
+        print("CLIENT: Detected game cancellation via state update");
+        
+        // Show message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Host canceled the game'))
+        );
+        
+        // Reset connection
+        _multiplayerService.resetConnection();
+        
+        // Restart page
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const JoinGamePage())
+          );
+        }
+      }
+    }
+  },
     onError: (error) {
       // print('Error in game data stream: $error');
       if (mounted) {
@@ -276,14 +293,25 @@ void _showGameCodeDialog(String host, String deviceName) {
     ),
   );
   
-  // Set up listener to close dialog when game starts
-  _multiplayerService.gameDataStream.where((data) => 
-    data is Map<String, dynamic> && data['type'] == 'game_start'
-  ).listen((_) {
-    if (Navigator.canPop(context)) {
-      Navigator.pop(context); // Close the dialog when game starts
-    }
-  });
+  // Set up listeners to close dialog on game events
+// Set up listeners to close dialog on game events
+_multiplayerService.gameDataStream.where((data) => 
+  data is Map<String, dynamic> && 
+  (data['type'] == 'game_start' || 
+   (data['type'] == 'game_state_update' && 
+    data.containsKey('data') && 
+    data['data'] is Map<String, dynamic> &&
+    data['data']['gameCancelled'] == true))
+).listen((data) {
+  if (!Navigator.canPop(context)) return;
+  
+  if (data['type'] == 'game_state_update' && 
+      data['data']['gameCancelled'] == true) {
+    Navigator.pop(context); // Close the dialog
+  } else if (data['type'] == 'game_start') {
+    Navigator.pop(context);
+  }
+});
 }
   
   // FIXED: Removed unused _navigateToGame method

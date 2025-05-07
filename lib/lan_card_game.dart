@@ -600,7 +600,10 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
           actions: <Widget>[
             TextButton(
               child: const Text('Play Again'),
-              onPressed: () {
+              onPressed: () async {
+                // Reset the connection
+                await widget.multiplayerService.resetConnection();
+                
                 Navigator.of(context).pop(); // Close dialog
                 Navigator.of(context).pop(); // Return to host/join screen
               },
