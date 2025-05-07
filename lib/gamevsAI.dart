@@ -362,12 +362,51 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   void _cpuTurn() {
-    if (_player2Cards.isNotEmpty) {
-      final randomMove = Random();
-      int moveChoice = randomMove.nextInt(2) + 1;
-      var playCard = _player2Cards.first;
+  if (_player2Cards.isNotEmpty) {
+    final randomMove = Random();
+    int moveChoice = randomMove.nextInt(2) + 1;
+    var playCard = _player2Cards.first;
 
-      if (moveChoice == 2) {
+    if (moveChoice == 2) {
+      // CPU plays a card
+      setState(() {
+        _lastPlayedCards = [playCard];
+        _player2Cards.removeAt(0);
+        _player2CardSelections.clear();
+        _isPlayer1Turn = true;
+        _hasPressedLiar = false;
+        _isPlayerCallingLiar = false;
+      });
+      _showCpuPlayIndicator(1, false);
+    } else {
+      // CPU calls liar (if possible)
+      if (_lastPlayedCards.isNotEmpty) {
+        setState(() {
+          _hasPressedLiar = true;
+          _isPlayerCallingLiar = false; // CPU is calling liar, not the player
+        });
+        
+        // Check if all cards match the top card or are jokers
+        bool allCardsMatch = _lastPlayedCards.every((card) =>
+            card['value'] == _topLeftCard || card['value'] == 'Joker');
+        
+        _showCpuPlayIndicator(0, true, allCardsMatch);
+        
+        // Update tokens and state after animation finishes
+        Future.delayed(const Duration(milliseconds: 4000), () {
+          setState(() {
+            if (allCardsMatch) {
+              // CPU was wrong - CPU loses a token
+              _player2Tokens -= 1;
+            } else {
+              // CPU was right - Player loses a token  
+              _player1Tokens -= 1;
+            }
+            _isPlayer1Turn = true;
+          });
+        });
+      } else {
+        // Can't call liar if no cards have been played, so play a card instead
         setState(() {
           _lastPlayedCards = [playCard];
           _player2Cards.removeAt(0);
@@ -377,23 +416,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           _isPlayerCallingLiar = false;
         });
         _showCpuPlayIndicator(1, false);
-      } else {
-        // Check if all cards match the top card or is a joker
-        bool allCardsMatch = _lastPlayedCards.every((card) =>
-            card['value'] == _topLeftCard || card['value'] == 'Joker');
-
-        setState(() {
-          _lastPlayedCards = [playCard];
-          _player2Cards.removeAt(0);
-          _player2CardSelections.clear();
-          _isPlayer1Turn = true;
-          _hasPressedLiar = true;
-          _isPlayerCallingLiar = false;
-        });
-        _showCpuPlayIndicator(1, true, allCardsMatch);
       }
     }
   }
+}
 
   void _playSelectedCards() {
     setState(() {
@@ -445,45 +471,56 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   void _checkLiar() {
-    if (_lastPlayedCards.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No cards have been played yet!'),
-          backgroundColor: Colors.brown,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _hasPressedLiar = true;
-      _isPlayerCallingLiar = true;
-    });
-
-    // Check if all cards match the top card or is a joker
-    bool allCardsMatch = _lastPlayedCards.every(
-        (card) => card['value'] == _topLeftCard || card['value'] == 'Joker');
-
-    // Show the liar animation
-    _showCpuPlayIndicator(0, true, allCardsMatch);
-
-    // Update tokens after animation
-    Future.delayed(const Duration(milliseconds: 4000), () {
-      setState(() {
-        if (allCardsMatch) {
-          if (_isPlayer1Turn && _player1Tokens > 0) {
-            _player1Tokens -= 1;
-          }
-        } else {
-          if (_player2Tokens > 0) {
-            _player2Tokens -= 1;
-          }
-        }
-        // Reset the liar caller state
-        _isPlayerCallingLiar = false;
-      });
-    });
+  if (_lastPlayedCards.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No cards have been played yet!'),
+        backgroundColor: Colors.brown,
+      ),
+    );
+    return;
   }
+
+  setState(() {
+    _hasPressedLiar = true;
+    _isPlayerCallingLiar = true; // Player is calling liar
+  });
+
+  // Check if all cards match the claimed card type or are jokers
+  bool allCardsMatch = _lastPlayedCards.every(
+      (card) => card['value'] == _topLeftCard || card['value'] == 'Joker');
+
+  // Show the liar animation
+  _showCpuPlayIndicator(0, true, allCardsMatch);
+
+  // Update tokens after animation
+  Future.delayed(const Duration(milliseconds: 4000), () {
+    setState(() {
+      if (_isPlayerCallingLiar) {
+        // Player called liar
+        if (allCardsMatch) {
+          // Cards matched - player's call was wrong - player loses token
+          _player1Tokens -= 1;
+        } else {
+          // Cards didn't match - player's call was right - CPU loses token
+          _player2Tokens -= 1;
+        }
+      } else {
+        // CPU called liar
+        if (allCardsMatch) {
+          // Cards matched - CPU's call was wrong - CPU loses token
+          _player2Tokens -= 1;
+        } else {
+          // Cards didn't match - CPU's call was right - player loses token
+          _player1Tokens -= 1;
+        }
+      }
+      
+      // Reset the liar caller state
+      _isPlayerCallingLiar = false;
+    });
+  });
+}
 
   void _onItemTapped(int index) {
     setState(() {
