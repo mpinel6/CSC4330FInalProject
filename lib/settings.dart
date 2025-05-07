@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'rules_page.dart';
+import 'audio_manager.dart';
 //import 'Credits_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -11,8 +12,16 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _notificationsEnabled = true;
-  double _musicVolume = 0.5;
-  double _soundFxVolume = 0.5;
+  late double _musicVolume;
+  late double _soundFxVolume;
+  final AudioManager _audioManager = AudioManager();
+
+  @override
+  void initState() {
+    super.initState();
+    _musicVolume = _audioManager.musicVolume;
+    _soundFxVolume = _audioManager.soundFxVolume;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +107,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     setState(() {
                       _musicVolume = value;
                     });
+                    _audioManager.setMusicVolume(value);
                   },
                   min: 0.0,
                   max: 1.0,
@@ -125,6 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     setState(() {
                       _soundFxVolume = value;
                     });
+                    _audioManager.setSoundFxVolume(value);
                   },
                   min: 0.0,
                   max: 1.0,
