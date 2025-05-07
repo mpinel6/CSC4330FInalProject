@@ -33,6 +33,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
+  
   int _selectedIndex = 0;
   bool _hasDealt = false;
   bool _hasSecondPlayer = true;
@@ -81,6 +82,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   ];
 
   final List<String> _topCards = ['Ace', 'King', 'Queen'];
+    int maxCards3() {
+    return _cardSelections.values.where((selected) => selected).length;
+  } 
 
   // Define text styles
   static const TextStyle _titleStyle = TextStyle(
@@ -394,6 +398,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   void _playSelectedCards() {
     setState(() {
       if (_isPlayer1Turn) {
+        
         _lastPlayedCards = _selectedCards
             .where((card) => _cardSelections['${card['id']}'] == true)
             .toList();
@@ -786,7 +791,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 20),
                           child: IconButton(
-                            onPressed: _playSelectedCards,
+                            onPressed: maxCards3() > 3 ? null : _playSelectedCards,
                             icon: Image.asset(
                               'assets/images/thumbsup.png',
                               width: 40,

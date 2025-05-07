@@ -24,6 +24,13 @@ class LanCardGame extends StatefulWidget {
 }
 
 class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin {
+  int maxCards3() {
+  if (widget.isHost) {
+    return _cardSelections.values.where((selected) => selected).length;
+  } else {
+    return _player2CardSelections.values.where((selected) => selected).length;
+  }
+}
   late GameStateManager _gameStateManager;
   StreamSubscription? _stateSubscription;
   
@@ -50,6 +57,7 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
   List<Map<String, dynamic>> _lastPlayedCards = [];
   int _player1Tokens = 3;
   int _player2Tokens = 3;
+  int tableDisplayer = 0;
   List<String> _deck = [
     'Ace', 'Ace', 'Ace', 'Ace', 'Ace', 'Ace',
     'King', 'King', 'King', 'King', 'King', 'King',
@@ -165,6 +173,8 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
         if (mounted) {
           setState(() {
             // Update game state from network
+            tableDisplayer = state['tableDisplayer'] ?? tableDisplayer;
+
             _hasDealt = state['hasDealt'] ?? _hasDealt;
             _isPlayer1Turn = state['isPlayer1Turn'] ?? _isPlayer1Turn;
             _hasPressedLiar = state['hasPressedLiar'] ?? _hasPressedLiar;
@@ -424,9 +434,12 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
       
       // Trigger animations locally
       _triggerCardAnimations();
+      
     } else {
+      
       // Client should send deal request to host
       widget.multiplayerService.sendGameAction('dealCards', {});
+       
     }
   }
 
@@ -466,7 +479,10 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
   }
 
   void _playSelectedCards() {
-    if (widget.isHost) {
+    if (widget.isHost && maxCards3() <= 3) {
+      
+      tableDisplayer = 1;
+     
       // Host implementation
       final selectedCardsList = _selectedCards
           .where((card) => _cardSelections['${card['id']}'] == true)
@@ -491,11 +507,13 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
         'lastPlayedCards': selectedCardsList,
         'isPlayer1Turn': false,
         'hasPressedLiar': false,
+        'tableDisplayer': tableDisplayer,
         'logMessage': 'Host played ${selectedCardsList.length} card(s)'
       };
       
       _gameStateManager.updateState(gameState);
     } else {
+      if(maxCards3() <= 3) {
     // Client implementation
     final selectedCardsList = _player2Cards // CHANGED: Use player2Cards for client
         .where((card) => _player2CardSelections['${card['id']}'] == true) // CHANGED: Use player2CardSelections
@@ -515,6 +533,7 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
           (card) => _player2CardSelections['${card['id']}'] == true);
       _player2CardSelections.clear();
     });
+    }
   }
   }
 
@@ -999,7 +1018,8 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
                 if (_hasDealt && isMyTurn)
                   Column(
                     children: [
-                      if (_cardSelections.values.any((selected) => selected))
+                      if ((widget.isHost && _cardSelections.values.any((selected) => selected)) || 
+    (!widget.isHost && _player2CardSelections.values.any((selected) => selected)))
                         Padding(
                           padding: const EdgeInsets.only(bottom: 20),
                           child: IconButton(
@@ -1233,6 +1253,7 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
                   ),
                 ),
                 // Play card and text
+                if (tableDisplayer == 0)
                 Center(
                   child: Transform.translate(
                     offset: Offset(
