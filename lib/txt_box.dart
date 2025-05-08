@@ -1,6 +1,14 @@
 // This file will be a chat box functionality
 // by Colby Blank
+// _sendMessage(sender: 'AI'); FOR AI ADDITIONS
+// Firebase Example
+// needs dependencies:
+// firebase_core: ^2.18.0
+// cloud_firestore: ^4.18.0
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
 class ChatBox extends StatefulWidget {
   const ChatBox({super.key});
@@ -10,7 +18,6 @@ class ChatBox extends StatefulWidget {
 
 class _ChatBoxState extends State<ChatBox> {
   bool _isChatVisible = false; // Controls chat box visibility
-  final List<String> _messages = []; // Placeholder for chat messages
   final TextEditingController _messageController = TextEditingController();
 
   void _toggleChatVisibility() {
@@ -19,13 +26,28 @@ class _ChatBoxState extends State<ChatBox> {
     });
   }
 
-  void _sendMessage() {
+  void _sendMessage({required String sender}) async {
     if (_messageController.text.trim().isNotEmpty) {
-      setState(() {
-        _messages.add(_messageController.text.trim());
-        _messageController.clear();
+      await _firestore.collection('chat').add({
+        'message': _messageController.text.trim(),
+        'sender': sender, // Add sender field
+        'timestamp': FieldValue.serverTimestamp(),
       });
+      _messageController.clear();
     }
+  }
+
+  Stream<List<Map<String, dynamic>>> _getMessages() {
+    return _firestore
+        .collection('chat')
+        .orderBy('timestamp', descending: false)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => {
+                  'message': doc['message'] as String,
+                  'sender': doc['sender'] as String,
+                })
+            .toList());
   }
 
   @override
@@ -48,30 +70,34 @@ class _ChatBoxState extends State<ChatBox> {
                         Text(
                           "Conversations",
                           style: TextStyle(
-                              fontSize: 32, fontWeight: FontWeight.bold),
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
                         Container(
-                          padding: EdgeInsets.only(
-                              left: 8, right: 8, top: 2, bottom: 2),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                           height: 30,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(30),
-                            color: Colors.pink[50],
+                            color: Colors.pink[100],
                           ),
                           child: Row(
                             children: <Widget>[
                               Icon(
                                 Icons.add,
-                                color: Colors.pink,
+                                color: Colors.white,
                                 size: 20,
                               ),
-                              SizedBox(
-                                width: 2,
-                              ),
+                              SizedBox(width: 4),
                               Text(
                                 "Add New",
                                 style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ],
                           ),
@@ -92,7 +118,7 @@ class _ChatBoxState extends State<ChatBox> {
                 height: 300,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.grey[100],
                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                   boxShadow: [
                     BoxShadow(
@@ -109,7 +135,7 @@ class _ChatBoxState extends State<ChatBox> {
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       height: 50,
                       decoration: BoxDecoration(
-                        color: Colors.pink[50],
+                        color: Colors.pink[200],
                         borderRadius:
                             BorderRadius.vertical(top: Radius.circular(20)),
                       ),
@@ -119,10 +145,13 @@ class _ChatBoxState extends State<ChatBox> {
                           Text(
                             "Chat",
                             style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.close, color: Colors.pink),
+                            icon: Icon(Icons.close, color: Colors.white),
                             onPressed: _toggleChatVisibility,
                           ),
                         ],
@@ -131,24 +160,41 @@ class _ChatBoxState extends State<ChatBox> {
 
                     // Chat Messages
                     Expanded(
-                      child: ListView.builder(
-                        padding: EdgeInsets.all(8),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          return Align(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              margin: EdgeInsets.symmetric(vertical: 4),
-                              padding: EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.pink[100],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                _messages[index],
-                                style: TextStyle(fontSize: 14),
-                              ),
-                            ),
+                      child: StreamBuilder<List<Map<String, dynamic>>>(
+                        stream: _getMessages(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData)
+                            return CircularProgressIndicator();
+                          final messages = snapshot.data!;
+                          return ListView.builder(
+                            padding: EdgeInsets.all(8),
+                            itemCount: messages.length,
+                            itemBuilder: (context, index) {
+                              final message = messages[index];
+                              final isPlayer = message['sender'] == 'player';
+                              return Align(
+                                alignment: isPlayer
+                                    ? Alignment.centerRight
+                                    : Alignment.centerLeft,
+                                child: Container(
+                                  margin: EdgeInsets.symmetric(vertical: 4),
+                                  padding: EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: isPlayer
+                                        ? Colors.blue[100]
+                                        : Colors.pink[100],
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    message['message'],
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
@@ -164,6 +210,7 @@ class _ChatBoxState extends State<ChatBox> {
                               controller: _messageController,
                               decoration: InputDecoration(
                                 hintText: "Type a message...",
+                                hintStyle: TextStyle(color: Colors.grey[600]),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -174,8 +221,8 @@ class _ChatBoxState extends State<ChatBox> {
                           ),
                           SizedBox(width: 8),
                           IconButton(
-                            icon: Icon(Icons.send, color: Colors.pink),
-                            onPressed: _sendMessage,
+                            icon: Icon(Icons.send, color: Colors.pink[400]),
+                            onPressed: () => _sendMessage(sender: 'player'),
                           ),
                         ],
                       ),
@@ -191,7 +238,7 @@ class _ChatBoxState extends State<ChatBox> {
             right: 20,
             child: FloatingActionButton(
               onPressed: _toggleChatVisibility,
-              backgroundColor: Colors.pink,
+              backgroundColor: Colors.pink[400],
               child: Icon(
                 _isChatVisible ? Icons.chat_bubble : Icons.chat,
                 color: Colors.white,
