@@ -270,7 +270,10 @@ Widget build(BuildContext context) {
 void _showStartGameDialog() {
   showDialog(
     context: context,
-    builder: (context) => AlertDialog(
+    barrierDismissible: false, // Prevents closing the dialog by tapping outside
+    builder: (context) => WillPopScope(
+      onWillPop: () async => false,
+      child: AlertDialog(
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -364,6 +367,7 @@ void _showStartGameDialog() {
       // Remove the actions section as we've moved both buttons to the content
       actions: [], // Empty actions
     ),
+  )
   );
 }
 }
