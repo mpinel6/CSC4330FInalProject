@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import "settings.dart";
+import "main.dart";
 //hunter todd
 //kollin bassie
 
@@ -44,20 +45,7 @@ class _RulesPageState extends State<RulesPage> {
             fontSize: 32,
             fontWeight: FontWeight.bold,
             color: Colors.white,
-            shadows: [
-              Shadow(offset: Offset(-2, -2), color: Colors.black),
-              Shadow(offset: Offset(2, -2), color: Colors.black),
-              Shadow(offset: Offset(-2, 2), color: Colors.black),
-              Shadow(offset: Offset(2, 2), color: Colors.black),
-              Shadow(offset: Offset(0, -2), color: Colors.black),
-              Shadow(offset: Offset(0, 2), color: Colors.black),
-              Shadow(offset: Offset(-2, 0), color: Colors.black),
-              Shadow(offset: Offset(2, 0), color: Colors.black),
-              Shadow(offset: Offset(-1, -1), color: Colors.black),
-              Shadow(offset: Offset(1, -1), color: Colors.black),
-              Shadow(offset: Offset(-1, 1), color: Colors.black),
-              Shadow(offset: Offset(1, 1), color: Colors.black),
-            ],
+            shadows: textShadows,
           ),
         ),
         backgroundColor: const Color.fromARGB(255, 49, 49, 49),
@@ -65,28 +53,48 @@ class _RulesPageState extends State<RulesPage> {
       ),
       backgroundColor: const Color.fromARGB(255, 161, 159, 159),
       body: const RulesLayout(),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book),
-            label: 'Rules',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF232323), // darker gray for selected
-        unselectedItemColor:
-            const Color(0xFFB0B0B0), // lighter gray for unselected
-        backgroundColor: const Color(0xFFD6D6D6),
-        onTap: _onItemTapped,
-      ),
+      // bottomNavigationBar: BottomNavigationBar(
+      //   items: <BottomNavigationBarItem>[
+      //     BottomNavigationBarItem(
+      //       icon: Image.asset(
+      //         'assets/images/Beer.png',
+      //         width: 35,
+      //         height: 35,
+      //       ),
+      //       label: 'Home',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Image.asset(
+      //         'assets/images/Question.png',
+      //         width: 35,
+      //         height: 35,
+      //       ),
+      //       label: 'Rules',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Image.asset(
+      //         'assets/images/Settings.png',
+      //         width: 35,
+      //         height: 35,
+      //       ),
+      //       label: 'Settings',
+      //     ),
+      //   ],
+      //   currentIndex: _selectedIndex,
+      //   selectedItemColor: const Color(0xFF232323),
+      //   unselectedItemColor: const Color(0xFFB0B0B0),
+      //   backgroundColor: const Color(0xFFD6D6D6),
+      //   selectedLabelStyle: const TextStyle(
+      //     fontFamily: 'Zubilo',
+      //     fontWeight: FontWeight.bold,
+      //     fontSize: 14,
+      //   ),
+      //   unselectedLabelStyle: const TextStyle(
+      //     fontFamily: 'Zubilo',
+      //     fontSize: 14,
+      //   ),
+      //   onTap: _onItemTapped,
+      // ),
     );
   }
 }
@@ -296,18 +304,16 @@ class RulesContentState extends State<RulesContent> {
                   "5. Draw replacement cards when out of cards\n"
                   "6. Play alternates between players\n\n"
                   "7. The game consists of 3 rounds. A round ends when a player loses all three lives. After each round, the table card is changed. The first player to win 2 rounds wins the game.\n\n",
-                  
             ),
             const SizedBox(height: 24),
             RulesSection(
-              key: _sectionKeys[3],
-              title: "Lives & Elimination",
-              content: "• Each player begins with 3 lives\n"
-                  "• Lose a life when:\n"
-                  "   - You're caught in a lie (placing cards that don't match your claim)\n"
-                  "   - You incorrectly challenge another player's claim\n\n"
-                  "• When you lose all 3 lives, your opponent wins that round\n"
-            ),
+                key: _sectionKeys[3],
+                title: "Lives & Elimination",
+                content: "• Each player begins with 3 lives\n"
+                    "• Lose a life when:\n"
+                    "   - You're caught in a lie (placing cards that don't match your claim)\n"
+                    "   - You incorrectly challenge another player's claim\n\n"
+                    "• When you lose all 3 lives, your opponent wins that round\n"),
             const SizedBox(height: 24),
             RulesSection(
               key: _sectionKeys[4],
@@ -385,25 +391,11 @@ class RulesSection extends StatelessWidget {
           child: Text(
             title,
             style: const TextStyle(
-              fontFamily: 'Zubilo',
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              shadows: [
-                Shadow(offset: Offset(-2, -2), color: Colors.black),
-                Shadow(offset: Offset(2, -2), color: Colors.black),
-                Shadow(offset: Offset(-2, 2), color: Colors.black),
-                Shadow(offset: Offset(2, 2), color: Colors.black),
-                Shadow(offset: Offset(0, -2), color: Colors.black),
-                Shadow(offset: Offset(0, 2), color: Colors.black),
-                Shadow(offset: Offset(-2, 0), color: Colors.black),
-                Shadow(offset: Offset(2, 0), color: Colors.black),
-                Shadow(offset: Offset(-1, -1), color: Colors.black),
-                Shadow(offset: Offset(1, -1), color: Colors.black),
-                Shadow(offset: Offset(-1, 1), color: Colors.black),
-                Shadow(offset: Offset(1, 1), color: Colors.black),
-              ],
-            ),
+                fontFamily: 'Zubilo',
+                fontSize: 24.0,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                shadows: textShadows),
           ),
         ),
         Container(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'rules_page.dart';
 import 'settings.dart';
 import 'matt_home_page.dart';
@@ -175,6 +176,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+     SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
     _cardControllers = List.generate(
         5,
         (_) => AnimationController(
@@ -266,6 +273,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _playIndicatorController.dispose();
     _topCardController.dispose();
     _cpuPlayController.dispose();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     super.dispose();
   }
 
@@ -994,6 +1007,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       _selectedIndex = index;
     });
 
+    SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+
     if (index == 0) {
       // Home button index
       Navigator.push(
@@ -1484,20 +1504,23 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       bottomNavigationBar: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        height: _isNavBarVisible ? kBottomNavigationBarHeight : 0,
+        height: _isNavBarVisible ? kBottomNavigationBarHeight + 20 : 0,
         child: SingleChildScrollView(
           child: BottomNavigationBar(
-            items: const <BottomNavigationBarItem>[
+            items: <BottomNavigationBarItem>[
               BottomNavigationBarItem(
-                icon: Icon(Icons.home),
+                icon: Image.asset('assets/images/Beer.png',
+                    width: 35, height: 35),
                 label: 'Home',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.book),
+                icon: Image.asset('assets/images/Question.png',
+                    width: 35, height: 35),
                 label: 'Rules',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.settings),
+                icon: Image.asset('assets/images/Settings.png',
+                    width: 35, height: 35),
                 label: 'Settings',
               ),
             ],
@@ -1505,6 +1528,15 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             selectedItemColor: const Color(0xFF232323),
             unselectedItemColor: const Color(0xFFB0B0B0),
             backgroundColor: const Color(0xFFD6D6D6),
+            selectedLabelStyle: const TextStyle(
+              fontFamily: 'Zubilo',
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontFamily: 'Zubilo',
+              fontSize: 14,
+            ),
             onTap: _onItemTapped,
           ),
         ),
