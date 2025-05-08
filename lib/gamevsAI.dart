@@ -172,12 +172,20 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late AnimationController _cpuPlayController;
   late Animation<double> _cpuPlayOpacity;
   late Animation<Offset> _cpuPlaySlide;
+  late AnimationController _dialogController;
+  late Animation<double> _dialogAnimation;
+  late AnimationController _announcementController;
+  late Animation<double> _announcementOpacity;
+  late Animation<Offset> _announcementSlide;
+  List<Map<String, dynamic>> _announcements = [];
+  static const int _maxAnnouncements = 3;
+  static const double _announcementSpacing = 10.0;
 
   @override
   void initState() {
     super.initState();
 
-     SystemChrome.setPreferredOrientations([
+    SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
@@ -252,6 +260,29 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       curve: const Interval(0.15, 0.25,
           curve: Curves.easeOutBack), // Faster slide in
     ));
+
+    // Initialize dialog animation
+    _dialogController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _dialogAnimation = CurvedAnimation(
+      parent: _dialogController,
+      curve: Curves.elasticOut,
+    );
+
+    // Initialize announcement animation
+    _announcementController = AnimationController(
+      duration: const Duration(milliseconds: 3000), // Reduced from 5000 to 3000
+      vsync: this,
+    );
+    _announcementSlide = Tween<Offset>(
+      begin: const Offset(-1.0, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _announcementController,
+      curve: Curves.easeOutBack,
+    ));
   }
 
   // Calculate the start position for each card based on its index
@@ -273,6 +304,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _playIndicatorController.dispose();
     _topCardController.dispose();
     _cpuPlayController.dispose();
+    _dialogController.dispose();
+    _announcementController.dispose();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -348,26 +381,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         });
       }
 
-      // Show round indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Round $_currentRound of 3'),
-          backgroundColor: Colors.brown[700],
-          duration: const Duration(seconds: 2),
-        ),
-      );
-
       // Show play indicator after a short delay
       Future.delayed(const Duration(milliseconds: 1000), () {
         _showPlayIndicator();
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Not enough cards left to deal!'),
-          backgroundColor: Colors.brown,
-        ),
-      );
+      _showAnnouncement('Not enough cards left to deal!');
     }
   }
 
@@ -410,89 +429,175 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.brown[50],
-          title: Center(
-            child: Text(
-              'Round $_currentRound Complete!',
-              style: TextStyle(
-                fontFamily: 'Zubilo',
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                shadows: [
-                  Shadow(offset: Offset(-2, -2), color: Colors.black),
-                  Shadow(offset: Offset(2, -2), color: Colors.black),
-                  Shadow(offset: Offset(-2, 2), color: Colors.black),
-                  Shadow(offset: Offset(2, 2), color: Colors.black),
-                  Shadow(offset: Offset(0, -2), color: Colors.black),
-                  Shadow(offset: Offset(0, 2), color: Colors.black),
-                  Shadow(offset: Offset(-2, 0), color: Colors.black),
-                  Shadow(offset: Offset(2, 0), color: Colors.black),
-                  Shadow(offset: Offset(-1, -1), color: Colors.black),
-                  Shadow(offset: Offset(1, -1), color: Colors.black),
-                  Shadow(offset: Offset(-1, 1), color: Colors.black),
-                  Shadow(offset: Offset(1, 1), color: Colors.black),
+        // Calculate dynamic font sizes based on screen size
+        final screenWidth = MediaQuery.of(context).size.width;
+        final screenHeight = MediaQuery.of(context).size.height;
+
+        // Base sizes on the smaller dimension to ensure consistency
+        final baseSize = min(screenWidth, screenHeight);
+
+        // Calculate font sizes
+        final titleSize = baseSize * 0.08;
+        final subtitleSize = baseSize * 0.045;
+        final bodySize = baseSize * 0.04;
+        final buttonSize = baseSize * 0.045;
+
+        // Calculate dynamic spacing
+        final tinySpacing = screenHeight * 0.01;
+        final smallSpacing = screenHeight * 0.02;
+        final mediumSpacing = screenHeight * 0.04;
+        final largeSpacing = screenHeight * 0.06;
+        final extraLargeSpacing = screenHeight * 0.12;
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: ScaleTransition(
+            scale: _dialogAnimation,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              height: MediaQuery.of(context).size.height *
+                  0.9, // Increased from 0.8 to 0.9
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/wooduiupdatepanel.png'),
+                  fit: BoxFit.contain,
+                ),
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.04,
+                vertical: screenHeight * 0.05, // Added vertical padding
+              ),
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween, // Changed to spaceBetween
+                children: [
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: tinySpacing),
+                      Text(
+                        'Round $_currentRound Complete!',
+                        style: TextStyle(
+                          fontFamily: 'Zubilo',
+                          fontSize: titleSize,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          shadows: const [
+                            Shadow(offset: Offset(-2, -2), color: Colors.black),
+                            Shadow(offset: Offset(2, -2), color: Colors.black),
+                            Shadow(offset: Offset(-2, 2), color: Colors.black),
+                            Shadow(offset: Offset(2, 2), color: Colors.black),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: extraLargeSpacing),
+                      Text(
+                        player1WinsRound
+                            ? 'You win this round!'
+                            : 'CPU wins this round!',
+                        style: TextStyle(
+                          fontFamily: "Zubilo",
+                          fontSize: subtitleSize,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          shadows: const [
+                            Shadow(offset: Offset(-2, -2), color: Colors.black),
+                            Shadow(offset: Offset(2, -2), color: Colors.black),
+                            Shadow(offset: Offset(-2, 2), color: Colors.black),
+                            Shadow(offset: Offset(2, 2), color: Colors.black),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: smallSpacing),
+                      Text(
+                        'Player tokens: $_player1Tokens',
+                        style: TextStyle(
+                          fontSize: bodySize,
+                          color: Colors.white,
+                          shadows: const [
+                            Shadow(offset: Offset(-2, -2), color: Colors.black),
+                            Shadow(offset: Offset(2, -2), color: Colors.black),
+                            Shadow(offset: Offset(-2, 2), color: Colors.black),
+                            Shadow(offset: Offset(2, 2), color: Colors.black),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        'CPU tokens: $_player2Tokens',
+                        style: TextStyle(
+                          fontSize: bodySize,
+                          color: Colors.white,
+                          shadows: const [
+                            Shadow(offset: Offset(-2, -2), color: Colors.black),
+                            Shadow(offset: Offset(2, -2), color: Colors.black),
+                            Shadow(offset: Offset(-2, 2), color: Colors.black),
+                            Shadow(offset: Offset(2, 2), color: Colors.black),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: smallSpacing),
+                      Text(
+                        'Match score: $_player1RoundWins - $_player2RoundWins',
+                        style: TextStyle(
+                          fontSize: bodySize,
+                          color: Colors.white,
+                          shadows: const [
+                            Shadow(offset: Offset(-2, -2), color: Colors.black),
+                            Shadow(offset: Offset(2, -2), color: Colors.black),
+                            Shadow(offset: Offset(-2, 2), color: Colors.black),
+                            Shadow(offset: Offset(2, 2), color: Colors.black),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    width: screenWidth * 0.3,
+                    height: screenHeight * 0.1,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          spreadRadius: 2,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextButton(
+                      onPressed: () {
+                        _dialogController.reverse().then((_) {
+                          Navigator.of(context).pop();
+                          _startNewRound();
+                        });
+                      },
+                      child: Text(
+                        'Next Round',
+                        style: TextStyle(
+                          fontFamily: 'Zubilo',
+                          fontSize: buttonSize,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          shadows: const [
+                            Shadow(offset: Offset(-2, -2), color: Colors.black),
+                            Shadow(offset: Offset(2, -2), color: Colors.black),
+                            Shadow(offset: Offset(-2, 2), color: Colors.black),
+                            Shadow(offset: Offset(2, 2), color: Colors.black),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                player1WinsRound
-                    ? 'You win this round!'
-                    : 'CPU wins this round!',
-                style: const TextStyle(
-                    fontFamily: "Zubilo",
-                    fontSize: 20,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Text('Player tokens: $_player1Tokens',
-                  style: const TextStyle(color: Colors.black)),
-              Text('CPU tokens: $_player2Tokens'),
-              const SizedBox(height: 10),
-              Text('Match score: $_player1RoundWins - $_player2RoundWins'),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text(
-                'Next Round',
-                style: TextStyle(
-                  fontFamily: 'Zubilo',
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(offset: Offset(-2, -2), color: Colors.black),
-                    Shadow(offset: Offset(2, -2), color: Colors.black),
-                    Shadow(offset: Offset(-2, 2), color: Colors.black),
-                    Shadow(offset: Offset(2, 2), color: Colors.black),
-                    Shadow(offset: Offset(0, -2), color: Colors.black),
-                    Shadow(offset: Offset(0, 2), color: Colors.black),
-                    Shadow(offset: Offset(-2, 0), color: Colors.black),
-                    Shadow(offset: Offset(2, 0), color: Colors.black),
-                    Shadow(offset: Offset(-1, -1), color: Colors.black),
-                    Shadow(offset: Offset(1, -1), color: Colors.black),
-                    Shadow(offset: Offset(-1, 1), color: Colors.black),
-                    Shadow(offset: Offset(1, 1), color: Colors.black),
-                  ],
-                ),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _startNewRound();
-              },
-            ),
-          ],
         );
       },
     );
+    _dialogController.forward();
   }
 
   void _startNewRound() {
@@ -546,86 +651,153 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.brown[50],
-          title: const Text(
-            'Match Complete!',
-            style: TextStyle(
-              fontFamily: 'Zubilo',
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              shadows: [
-                Shadow(offset: Offset(-2, -2), color: Colors.black),
-                Shadow(offset: Offset(2, -2), color: Colors.black),
-                Shadow(offset: Offset(-2, 2), color: Colors.black),
-                Shadow(offset: Offset(2, 2), color: Colors.black),
-                Shadow(offset: Offset(0, -2), color: Colors.black),
-                Shadow(offset: Offset(0, 2), color: Colors.black),
-                Shadow(offset: Offset(-2, 0), color: Colors.black),
-                Shadow(offset: Offset(2, 0), color: Colors.black),
-                Shadow(offset: Offset(-1, -1), color: Colors.black),
-                Shadow(offset: Offset(1, -1), color: Colors.black),
-                Shadow(offset: Offset(-1, 1), color: Colors.black),
-                Shadow(offset: Offset(1, 1), color: Colors.black),
-              ],
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                player1WinsMatch
-                    ? 'Congratulations! You win the match!'
-                    : 'CPU wins the match!',
-                style: const TextStyle(
-                    fontFamily: "Zubilo",
-                    fontSize: 20,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Text('Final score: $_player1RoundWins - $_player2RoundWins'),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text(
-                'Play Again',
-                style: TextStyle(
-                  fontFamily: 'Zubilo',
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(offset: Offset(-2, -2), color: Colors.black),
-                    Shadow(offset: Offset(2, -2), color: Colors.black),
-                    Shadow(offset: Offset(-2, 2), color: Colors.black),
-                    Shadow(offset: Offset(2, 2), color: Colors.black),
-                    Shadow(offset: Offset(0, -2), color: Colors.black),
-                    Shadow(offset: Offset(0, 2), color: Colors.black),
-                    Shadow(offset: Offset(-2, 0), color: Colors.black),
-                    Shadow(offset: Offset(2, 0), color: Colors.black),
-                    Shadow(offset: Offset(-1, -1), color: Colors.black),
-                    Shadow(offset: Offset(1, -1), color: Colors.black),
-                    Shadow(offset: Offset(-1, 1), color: Colors.black),
-                    Shadow(offset: Offset(1, 1), color: Colors.black),
-                  ],
+        // Calculate dynamic font sizes based on screen size
+        final screenWidth = MediaQuery.of(context).size.width;
+        final screenHeight = MediaQuery.of(context).size.height;
+
+        // Base sizes on the smaller dimension to ensure consistency
+        final baseSize = min(screenWidth, screenHeight);
+
+        // Calculate font sizes
+        final titleSize = baseSize * 0.08;
+        final subtitleSize = baseSize * 0.045;
+        final bodySize = baseSize * 0.04;
+        final buttonSize = baseSize * 0.045;
+
+        // Calculate dynamic spacing
+        final tinySpacing = screenHeight * 0.01;
+        final smallSpacing = screenHeight * 0.02;
+        final mediumSpacing = screenHeight * 0.04;
+        final largeSpacing = screenHeight * 0.06;
+        final extraLargeSpacing = screenHeight * 0.12;
+        final superLargeSpacing = screenHeight * 0.15;
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: ScaleTransition(
+            scale: _dialogAnimation,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              height: MediaQuery.of(context).size.height *
+                  0.9, // Increased from 0.8 to 0.9
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/wooduiupdatepanel.png'),
+                  fit: BoxFit.contain,
                 ),
               ),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const Gamevsai()),
-                );
-              },
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.04,
+                vertical: screenHeight * 0.05, // Added vertical padding
+              ),
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween, // Changed to spaceBetween
+                children: [
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: tinySpacing),
+                      Text(
+                        'Match Complete!',
+                        style: TextStyle(
+                          fontFamily: 'Zubilo',
+                          fontSize: titleSize,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          shadows: const [
+                            Shadow(offset: Offset(-2, -2), color: Colors.black),
+                            Shadow(offset: Offset(2, -2), color: Colors.black),
+                            Shadow(offset: Offset(-2, 2), color: Colors.black),
+                            Shadow(offset: Offset(2, 2), color: Colors.black),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: superLargeSpacing),
+                      Text(
+                        player1WinsMatch
+                            ? 'Congratulations! You win the match!'
+                            : 'CPU wins the match!',
+                        style: TextStyle(
+                          fontFamily: "Zubilo",
+                          fontSize: subtitleSize,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          shadows: const [
+                            Shadow(offset: Offset(-2, -2), color: Colors.black),
+                            Shadow(offset: Offset(2, -2), color: Colors.black),
+                            Shadow(offset: Offset(-2, 2), color: Colors.black),
+                            Shadow(offset: Offset(2, 2), color: Colors.black),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: smallSpacing),
+                      Text(
+                        'Final score: $_player1RoundWins - $_player2RoundWins',
+                        style: TextStyle(
+                          fontSize: bodySize,
+                          color: Colors.white,
+                          shadows: const [
+                            Shadow(offset: Offset(-2, -2), color: Colors.black),
+                            Shadow(offset: Offset(2, -2), color: Colors.black),
+                            Shadow(offset: Offset(-2, 2), color: Colors.black),
+                            Shadow(offset: Offset(2, 2), color: Colors.black),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    width: screenWidth * 0.3,
+                    height: screenHeight * 0.1,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          spreadRadius: 2,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextButton(
+                      onPressed: () {
+                        _dialogController.reverse().then((_) {
+                          Navigator.of(context).pop();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const Gamevsai()),
+                          );
+                        });
+                      },
+                      child: Text(
+                        'Play Again',
+                        style: TextStyle(
+                          fontFamily: 'Zubilo',
+                          fontSize: buttonSize,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          shadows: const [
+                            Shadow(offset: Offset(-2, -2), color: Colors.black),
+                            Shadow(offset: Offset(2, -2), color: Colors.black),
+                            Shadow(offset: Offset(-2, 2), color: Colors.black),
+                            Shadow(offset: Offset(2, 2), color: Colors.black),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         );
       },
     );
+    _dialogController.forward();
   }
 
   void _cpuTurn() {
@@ -641,13 +813,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
       // If still empty after replenishment attempt, pass turn
       if (_player2Cards.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'CPU has no cards and no more cards available! Passing turn.'),
-            backgroundColor: Colors.brown,
-          ),
-        );
+        _showAnnouncement(
+            'CPU has no cards and no more cards available! Passing turn.');
         setState(() {
           _isPlayer1Turn = true;
         });
@@ -771,14 +938,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       _showCpuPlayIndicator(cardsToPlay.length, false);
 
       // Announce what the CPU did
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'CPU played ${cardsToPlay.length} card${cardsToPlay.length > 1 ? 's' : ''}'),
-          backgroundColor: Colors.brown,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      _showAnnouncement(
+          'CPU played ${cardsToPlay.length} card${cardsToPlay.length > 1 ? 's' : ''}');
 
       // Check if CPU needs cards after playing
       if (_player2Cards.isEmpty) {
@@ -847,13 +1008,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         _deck.shuffle(random);
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Discard pile reshuffled into the deck!'),
-          backgroundColor: Colors.brown,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      _showAnnouncement('Discard pile reshuffled into the deck!');
     }
   }
 
@@ -865,13 +1020,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
     // If deck is still empty after potential reshuffle, show message and return
     if (_deck.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Deck and discard pile are empty! No cards available to draw.'),
-          backgroundColor: Colors.brown,
-        ),
-      );
+      _showAnnouncement('No cards available to draw!');
       return;
     }
 
@@ -884,7 +1033,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     for (int i = 0; i < cardsToAdd; i++) {
       final cardIndex = random.nextInt(_deck.length);
       newCards.add({
-        'id': 100 + i, // Use high IDs to avoid conflicts
+        'id': 100 + i,
         'value': _deck[cardIndex],
       });
       _deck.removeAt(cardIndex);
@@ -897,22 +1046,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       };
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('You drew $cardsToAdd new cards!'),
-        backgroundColor: Colors.brown,
-      ),
-    );
+    _showAnnouncement('You drew $cardsToAdd new cards!');
   }
 
   void _replenishCpuCards() {
     if (_deck.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Deck is empty! No cards available for CPU to draw.'),
-          backgroundColor: Colors.brown,
-        ),
-      );
+      _showAnnouncement('No cards available for CPU to draw!');
       return;
     }
 
@@ -925,7 +1064,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     for (int i = 0; i < cardsToAdd; i++) {
       final cardIndex = random.nextInt(_deck.length);
       newCards.add({
-        'id': 200 + i, // Use different range than player cards
+        'id': 200 + i,
         'value': _deck[cardIndex],
       });
       _deck.removeAt(cardIndex);
@@ -937,16 +1076,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         for (var card in _player2Cards) '${card['id']}': false
       };
     });
+
+    _showAnnouncement('CPU drew $cardsToAdd new cards!');
   }
 
   void _checkLiar() {
     if (_lastPlayedCards.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No cards have been played yet!'),
-          backgroundColor: Colors.brown,
-        ),
-      );
+      _showAnnouncement('No cards have been played yet!');
       return;
     }
 
@@ -1008,11 +1144,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     });
 
     SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
 
     if (index == 0) {
       // Home button index
@@ -1049,6 +1185,158 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         curve: Curves.easeInOut,
       ));
     }
+  }
+
+  void _testDialogs() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        // Calculate dynamic font sizes based on screen size
+        final screenWidth = MediaQuery.of(context).size.width;
+        final screenHeight = MediaQuery.of(context).size.height;
+
+        // Base sizes on the smaller dimension to ensure consistency
+        final baseSize = min(screenWidth, screenHeight);
+
+        // Calculate font sizes
+        final titleSize = baseSize * 0.06;
+        final buttonSize = baseSize * 0.045;
+
+        // Calculate dynamic spacing
+        final smallSpacing = screenHeight * 0.02;
+        final mediumSpacing = screenHeight * 0.04;
+        final largeSpacing = screenHeight * 0.06;
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: ScaleTransition(
+            scale: _dialogAnimation,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              height: MediaQuery.of(context).size.height * 0.8,
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/wooduiupdatepanel.png'),
+                  fit: BoxFit.contain,
+                ),
+              ),
+              padding: EdgeInsets.all(screenWidth * 0.04),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: smallSpacing),
+                    Text(
+                      'Test Dialogs',
+                      style: TextStyle(
+                        fontFamily: 'Zubilo',
+                        fontSize: titleSize,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        shadows: const [
+                          Shadow(offset: Offset(-2, -2), color: Colors.black),
+                          Shadow(offset: Offset(2, -2), color: Colors.black),
+                          Shadow(offset: Offset(-2, 2), color: Colors.black),
+                          Shadow(offset: Offset(2, 2), color: Colors.black),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: largeSpacing),
+                    Container(
+                      width: screenWidth * 0.3,
+                      height: screenHeight * 0.1,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          _dialogController.reverse().then((_) {
+                            Navigator.pop(context);
+                            _endRound();
+                          });
+                        },
+                        child: Text(
+                          'Test Round Complete',
+                          style: TextStyle(
+                            fontFamily: 'Zubilo',
+                            fontSize: buttonSize,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: const [
+                              Shadow(
+                                  offset: Offset(-2, -2), color: Colors.black),
+                              Shadow(
+                                  offset: Offset(2, -2), color: Colors.black),
+                              Shadow(
+                                  offset: Offset(-2, 2), color: Colors.black),
+                              Shadow(offset: Offset(2, 2), color: Colors.black),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: mediumSpacing),
+                    Container(
+                      width: screenWidth * 0.3,
+                      height: screenHeight * 0.1,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          _dialogController.reverse().then((_) {
+                            Navigator.pop(context);
+                            _endMatch();
+                          });
+                        },
+                        child: Text(
+                          'Test Match Complete',
+                          style: TextStyle(
+                            fontFamily: 'Zubilo',
+                            fontSize: buttonSize,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: const [
+                              Shadow(
+                                  offset: Offset(-2, -2), color: Colors.black),
+                              Shadow(
+                                  offset: Offset(2, -2), color: Colors.black),
+                              Shadow(
+                                  offset: Offset(-2, 2), color: Colors.black),
+                              Shadow(offset: Offset(2, 2), color: Colors.black),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    _dialogController.forward();
   }
 
   @override
@@ -1199,6 +1487,39 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                             ),
                           ),
                         ),
+                      // Round indicator
+                      if (_hasDealt)
+                        SlideTransition(
+                          position: _topCardSlide,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            margin: const EdgeInsets.only(left: 45),
+                            child: Text(
+                              'Round $_currentRound of 3',
+                              style: const TextStyle(
+                                fontFamily: 'Zubilo',
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                      offset: Offset(-2, -2),
+                                      color: Colors.black),
+                                  Shadow(
+                                      offset: Offset(2, -2),
+                                      color: Colors.black),
+                                  Shadow(
+                                      offset: Offset(-2, 2),
+                                      color: Colors.black),
+                                  Shadow(
+                                      offset: Offset(2, 2),
+                                      color: Colors.black),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -1227,19 +1548,37 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                           const SizedBox(width: 20),
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.black.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white, width: 2),
                             ),
-                            child: IconButton(
+                            padding: const EdgeInsets.all(8),
+                            child: PopupMenuButton<String>(
                               icon: Icon(
                                 _isNavBarVisible ? Icons.menu : Icons.menu_open,
                                 color: Colors.white,
+                                size: 32,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _isNavBarVisible = !_isNavBarVisible;
-                                });
+                              onSelected: (String result) {
+                                if (result == 'nav') {
+                                  setState(() {
+                                    _isNavBarVisible = !_isNavBarVisible;
+                                  });
+                                } else if (result == 'test') {
+                                  _testDialogs();
+                                }
                               },
+                              itemBuilder: (BuildContext context) =>
+                                  <PopupMenuEntry<String>>[
+                                const PopupMenuItem<String>(
+                                  value: 'nav',
+                                  child: Text('Toggle Navigation Bar'),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'test',
+                                  child: Text('Test Dialogs'),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -1498,6 +1837,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             // Play indicator overlay
             _buildPlayIndicator(),
             _buildCpuPlayIndicator(),
+            _buildAnnouncement(),
           ],
         ),
       ),
@@ -1606,6 +1946,25 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                           style: TextStyle(
                             fontFamily: 'Zubilo',
                             fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                  offset: Offset(-2, -2), color: Colors.black),
+                              Shadow(
+                                  offset: Offset(2, -2), color: Colors.black),
+                              Shadow(
+                                  offset: Offset(-2, 2), color: Colors.black),
+                              Shadow(offset: Offset(2, 2), color: Colors.black),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'ROUND $_currentRound OF 3',
+                          style: TextStyle(
+                            fontFamily: 'Zubilo',
+                            fontSize: 36,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                             shadows: [
@@ -1804,5 +2163,84 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         );
       },
     );
+  }
+
+  Widget _buildAnnouncement() {
+    return AnimatedBuilder(
+      animation: _announcementController,
+      builder: (context, child) {
+        return Visibility(
+          visible: _announcementController.value > 0,
+          child: Positioned(
+            left: 20,
+            bottom: 100,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _announcements.asMap().entries.map((entry) {
+                final index = entry.key;
+                final announcement = entry.value;
+                return Padding(
+                  padding: EdgeInsets.only(
+                      bottom: index < _announcements.length - 1
+                          ? _announcementSpacing
+                          : 0),
+                  child: SlideTransition(
+                    position: _announcementSlide,
+                    child: Text(
+                      announcement['message'],
+                      style: const TextStyle(
+                        fontFamily: 'Zubilo',
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(offset: Offset(-1, -1), color: Colors.black),
+                          Shadow(offset: Offset(1, -1), color: Colors.black),
+                          Shadow(offset: Offset(-1, 1), color: Colors.black),
+                          Shadow(offset: Offset(1, 1), color: Colors.black),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAnnouncement(String message) {
+    // Remove the animation check since we want announcements to show during full-screen animations
+    final now = DateTime.now();
+    setState(() {
+      _announcements.insert(0, {
+        'message': message,
+        'timestamp': now,
+      });
+
+      if (_announcements.length > _maxAnnouncements) {
+        _announcements.removeLast();
+      }
+    });
+
+    _announcementController.reset();
+    _announcementController.forward().then((_) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          _announcementController.reverse().then((_) {
+            if (mounted) {
+              setState(() {
+                if (_announcements.isNotEmpty) {
+                  _announcements.removeLast();
+                }
+              });
+            }
+          });
+        }
+      });
+    });
   }
 }
