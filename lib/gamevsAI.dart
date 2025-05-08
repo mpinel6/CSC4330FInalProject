@@ -59,6 +59,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   List<int> _player1UsedNumbers = [];
   List<int> _player2UsedNumbers = [];
   List<String> _discardPile = [];
+  int _currentRound = 1;
+  int _player1RoundWins = 0;
+  int _player2RoundWins = 0;
+  bool _isRoundOver = false;
 
   List<String> _deck = [
     'Ace',
@@ -273,74 +277,87 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   void _dealCards() {
-    int requiredLength = 5; //one player 5 cards
-    if (_hasSecondPlayer) {
-      requiredLength = 10; //2 players 10
-    }
-    if (_deck.length >= requiredLength) {
-      final random = Random();
-      _deck.shuffle(random);
-      setState(() {
-        // the rng mechanic for the roulette
-        _player1UsedNumbers = [];
-        _player2UsedNumbers = [];
-        // each player has a random number that is defined at dealing that will be the reason they lose - token taken out
-        _player1LuckyNumber = random.nextInt(6) + 1;
-        _player2LuckyNumber = random.nextInt(6) + 1;
+  int requiredLength = 5; // one player 5 cards
+  if (_hasSecondPlayer) {
+    requiredLength = 10; // 2 players 10
+  }
+  if (_deck.length >= requiredLength) {
+    final random = Random();
+    _deck.shuffle(random);
+    setState(() {
+      // the rng mechanic for the roulette
+      _player1UsedNumbers = [];
+      _player2UsedNumbers = [];
+      // each player has a random number that is defined at dealing that will be the reason they lose - token taken out
+      _player1LuckyNumber = random.nextInt(6) + 1;
+      _player2LuckyNumber = random.nextInt(6) + 1;
 
-        // send out cards
-        _selectedCards = _deck.take(5).toList().asMap().entries.map((entry) {
+      // Reset tokens for both players at the start of each round
+      _player1Tokens = 3;
+      _player2Tokens = 3;
+
+      // send out cards
+      _selectedCards = _deck.take(5).toList().asMap().entries.map((entry) {
+        return {
+          'id': entry.key,
+          'value': entry.value,
+        };
+      }).toList();
+
+      // send out cards to second player
+      if (_hasSecondPlayer) {
+        _player2Cards =
+            _deck.skip(5).take(5).toList().asMap().entries.map((entry) {
           return {
-            'id': entry.key,
+            'id': entry.key + 5,
             'value': entry.value,
           };
         }).toList();
-
-        // send out cards to second player
-        if (_hasSecondPlayer) {
-          _player2Cards =
-              _deck.skip(5).take(5).toList().asMap().entries.map((entry) {
-            return {
-              'id': entry.key + 5,
-              'value': entry.value,
-            };
-          }).toList();
-          _deck.removeRange(0, 10);
-        } else {
-          _deck.removeRange(0, 5);
-        }
-
-        _hasDealt = true;
-        _topLeftCard = _topCards[random.nextInt(_topCards.length)];
-        _cardSelections = {
-          for (var card in _selectedCards) '${card['id']}': false
-        };
-        _player2CardSelections = {
-          for (var card in _player2Cards) '${card['id']}': false
-        };
-      });
-
-      // Trigger card animations
-      for (int i = 0; i < _selectedCards.length; i++) {
-        _cardControllers[i].reset();
-        Future.delayed(Duration(milliseconds: 150 * i), () {
-          _cardControllers[i].forward();
-        });
+        _deck.removeRange(0, 10);
+      } else {
+        _deck.removeRange(0, 5);
       }
 
-      // Show play indicator after a short delay
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        _showPlayIndicator();
+      _hasDealt = true;
+      _topLeftCard = _topCards[random.nextInt(_topCards.length)];
+      _cardSelections = {
+        for (var card in _selectedCards) '${card['id']}': false
+      };
+      _player2CardSelections = {
+        for (var card in _player2Cards) '${card['id']}': false
+      };
+    });
+
+    // Trigger card animations
+    for (int i = 0; i < _selectedCards.length; i++) {
+      _cardControllers[i].reset();
+      Future.delayed(Duration(milliseconds: 150 * i), () {
+        _cardControllers[i].forward();
       });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('error'),
-          backgroundColor: Colors.brown,
-        ),
-      );
     }
+
+    // Show round indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Round $_currentRound of 3'),
+        backgroundColor: Colors.brown[700],
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    // Show play indicator after a short delay
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      _showPlayIndicator();
+    });
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Not enough cards left to deal!'),
+        backgroundColor: Colors.brown,
+      ),
+    );
   }
+}
 
   void _showPlayIndicator() {
     _playIndicatorController.reset();
@@ -362,6 +379,139 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       }
     });
   }
+
+  void _endRound() {
+  // Determine the winner of the current round
+  bool player1WinsRound = _player1Tokens > _player2Tokens;
+  
+  setState(() {
+    if (player1WinsRound) {
+      _player1RoundWins++;
+    } else {
+      _player2RoundWins++;
+    }
+    _isRoundOver = true;
+  });
+  
+  // Show round results dialog
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Colors.brown[100],
+        title: Text('Round $_currentRound Complete!'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              player1WinsRound ? 'You win this round!' : 'CPU wins this round!',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 10),
+            Text('Player tokens: $_player1Tokens'),
+            Text('CPU tokens: $_player2Tokens'),
+            const SizedBox(height: 10),
+            Text('Match score: $_player1RoundWins - $_player2RoundWins'),
+          ],
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Next Round'),
+            onPressed: () {
+              Navigator.of(context).pop();
+              _startNewRound();
+            },
+          ),
+        ],
+      );
+    },
+  );
+  }
+
+  void _startNewRound() {
+  // Check if the match is over (best of 3)
+  if (_player1RoundWins >= 2 || _player2RoundWins >= 2 || _currentRound >= 3) {
+    _endMatch();
+    return;
+  }
+  
+  final random = Random();
+  
+  setState(() {
+    // Increment round counter
+    _currentRound++;
+    
+    // Reset round-specific state
+    _hasDealt = false;
+    _isPlayer1Turn = true;
+    _hasPressedLiar = false;
+    _isPlayerCallingLiar = false;
+    _lastPlayedCards = [];
+    _selectedCards = [];
+    _player2Cards = [];
+    _cardSelections = {};
+    _player2CardSelections = {};
+    
+    // Reset tokens for both players
+    _player1Tokens = 3;
+    _player2Tokens = 3;
+    
+    // Reshuffle all cards back into deck
+    if (_discardPile.isNotEmpty) {
+      _deck.addAll(_discardPile);
+      _discardPile.clear();
+    }
+    
+    // Change the table card for the new round
+    _topLeftCard = _topCards[random.nextInt(_topCards.length)];
+    
+    // Reset round over flag
+    _isRoundOver = false;
+  });
+}
+
+void _endMatch() {
+  bool player1WinsMatch = _player1RoundWins > _player2RoundWins;
+  
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Colors.brown[100],
+        title: const Text('Match Complete!'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              player1WinsMatch 
+                ? 'Congratulations! You win the match!'
+                : 'CPU wins the match!',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 10),
+            Text('Final score: $_player1RoundWins - $_player2RoundWins'),
+          ],
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Play Again'),
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const Gamevsai()),
+              );
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
 
   void _cpuTurn() {
   // First check if CPU needs cards
@@ -525,37 +675,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 }
 
   void _checkGameOver() {
-    if (_player1Tokens <= 0 || _player2Tokens <= 0) {
-      String winnerText = _player1Tokens <= 0 
-          ? "CPU has won the game!" 
-          : "Congratulations! You have won the game!";
-          
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: Colors.brown[100],
-            title: const Text('Game Over!'),
-            content: Text(winnerText),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Play Again'),
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close dialog
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const Gamevsai()),
-                  );
-                },
-              ),
-            ],
-          );
-        },
-      );
-    }
+  if (_player1Tokens <= 0 || _player2Tokens <= 0) {
+    // End the round when a player runs out of tokens
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      _endRound();
+    });
   }
+}
 
   void _playSelectedCards() {
     setState(() {
