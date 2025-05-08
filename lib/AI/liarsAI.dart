@@ -2,18 +2,18 @@ import 'dart:math';
 import 'game_context.dart';
 import 'player_memory.dart';
 
-/// The core AI class responsible for deciding whether to play or challenge in Liar's Deck.
+/// AI logic for deciding moves in Liar's Deck game.
 class LiarsDeckAI {
   final Random _rng;
   final PlayerMemory memory = PlayerMemory();
 
   LiarsDeckAI({Random? rng}) : _rng = rng ?? Random();
 
-  /// Makes a decision based on the current game context: play or challenge.
+  /// Decides to either play or challenge based on the game context.
   Map<String, dynamic> decidePlay(GameContext ctx) {
-    final maxClaim = min(3, ctx.hand.length);
-    final bestCount = _currentBestCount(ctx.hand, ctx.tableCard);
-    final suspicion = (ctx.lastPlayerId != null)
+    final int maxClaim = min(3, ctx.hand.length);
+    final int bestCount = _countMatchingCards(ctx.hand, ctx.tableCard);
+    final double suspicion = ctx.lastPlayerId != null
         ? (memory.suspicionScores[ctx.lastPlayerId] ?? 0.0)
         : 0.0;
 
@@ -25,62 +25,75 @@ class LiarsDeckAI {
       return {"action": "challenge"};
     }
 
-    final play = _decideCardPlay(ctx.hand, ctx.tableCard, ctx.roundNumber, maxClaim);
+    final playDecision = _decideCardPlay(
+      hand: ctx.hand,
+      tableCard: ctx.tableCard,
+      round: ctx.roundNumber,
+      maxClaim: maxClaim,
+    );
 
     if (ctx.lastPlayerId != null && ctx.lastClaimCount > 0) {
       memory.recordClaim(ctx.lastPlayerId!, ctx.tableCard, ctx.lastClaimCount);
     }
 
-    return play;
+    return playDecision;
   }
 
-  /// Determines whether to challenge the last player's claim.
+  /// Determines whether the AI should challenge the last claim.
   bool _shouldChallenge(GameContext ctx) {
     if (ctx.lastClaimCount == 0 || ctx.lastPlayerId == null) return false;
-    if (_currentBestCount(ctx.hand, ctx.tableCard) > ctx.lastClaimCount) return false;
 
-    final likelihood = memory.estimatedTruthProbability(ctx.tableCard, ctx.lastClaimCount);
-    final avgClaim = memory.getEMAClaim(ctx.lastPlayerId!);
-    final suspicion = memory.suspicionScores[ctx.lastPlayerId!] ?? 0.0;
-    final lieProbability = memory.bayesianLieProbability(ctx.lastPlayerId!);
-    final accuracy = memory.challengeAccuracy(ctx.lastPlayerId!);
+    if (_countMatchingCards(ctx.hand, ctx.tableCard) > ctx.lastClaimCount) {
+      return false;
+    }
 
-    final isSuspicious = ctx.lastClaimCount > (avgClaim + 1);
+    final double likelihood = memory.estimatedTruthProbability(ctx.tableCard, ctx.lastClaimCount);
+    final double avgClaim = memory.getEMAClaim(ctx.lastPlayerId!);
+    final double suspicion = memory.suspicionScores[ctx.lastPlayerId!] ?? 0.0;
+    final double lieProbability = memory.bayesianLieProbability(ctx.lastPlayerId!);
+    final double accuracy = memory.challengeAccuracy(ctx.lastPlayerId!);
+
+    final bool isSuspicious = ctx.lastClaimCount > (avgClaim + 1);
+
     double threshold = (isSuspicious ? 0.5 : 0.3)
-        - suspicion * 0.2
-        - lieProbability * 0.2
-        + (0.5 - accuracy) * 0.2;
-    threshold = threshold.clamp(0.05, 0.9);
+        - (suspicion * 0.2)
+        - (lieProbability * 0.2)
+        + ((0.5 - accuracy) * 0.2);
 
-    return likelihood < threshold;
+    return likelihood < threshold.clamp(0.05, 0.9);
   }
 
-  /// Determines how many cards to play or if a bluff is needed.
-  Map<String, dynamic> _decideCardPlay(List<String> hand, String tableCard, int round, int maxClaim) {
-    final matchCount = _currentBestCount(hand, tableCard);
-    final safePlay = min(matchCount, maxClaim);
-    bool canBluff = hand.length >= 2;
-    double bluffRate = memory.getBluffSuccessRate(-1); // Use -1 for AI
+  /// Decides how many cards to play or if to bluff.
+  Map<String, dynamic> _decideCardPlay({
+    required List<String> hand,
+    required String tableCard,
+    required int round,
+    required int maxClaim,
+  }) {
+    final int matchCount = _countMatchingCards(hand, tableCard);
+    final int safePlay = min(matchCount, maxClaim);
+    final bool canBluff = hand.length >= 2;
+    final double bluffRate = memory.getBluffSuccessRate(-1);
 
     double bluffChance = 0.4 + round * 0.05 + (safePlay == 0 ? 0.3 : 0.0);
     bluffChance += (bluffRate - 0.5) * 0.4;
     bluffChance = bluffChance.clamp(0.0, 0.95);
 
-    final shouldBluff = safePlay == 0 || _rng.nextDouble() < bluffChance;
-    final count = shouldBluff ? (_rng.nextInt(maxClaim) + 1) : safePlay;
+    final bool shouldBluff = canBluff && (safePlay == 0 || _rng.nextDouble() < bluffChance);
+    final int count = shouldBluff ? (_rng.nextInt(maxClaim) + 1) : safePlay;
 
     return {"action": "play", "count": count};
   }
 
-  /// Determines if the card matches the target table card.
+  /// Checks if a card matches the current table card.
   bool _isMatch(String card, String tableCard) => card == tableCard || card == 'Joker';
 
   /// Counts how many cards in hand match the table card.
-  int _currentBestCount(List<String> hand, String tableCard) {
+  int _countMatchingCards(List<String> hand, String tableCard) {
     return hand.where((card) => _isMatch(card, tableCard)).length;
   }
 
-  /// Records the result of a challenge by the AI.
+  /// Updates memory based on challenge outcome.
   void recordChallengeOutcome(int playerId, bool wasLie) {
     if (wasLie) {
       memory.recordLie(playerId);
@@ -90,6 +103,6 @@ class LiarsDeckAI {
     memory.recordChallengeResult(playerId, wasLie);
   }
 
-  /// Clears internal memory to reset the AI state.
+  /// Clears all memory of the AI.
   void resetMemory() => memory.resetMemory();
 }
