@@ -77,6 +77,8 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               value: _notificationsEnabled,
               activeColor: const Color.fromARGB(255, 49, 49, 49),
+              inactiveTrackColor: Colors.brown[50],
+              inactiveThumbColor: Color.fromARGB(255, 161, 159, 159),
               onChanged: (bool value) {
                 setState(() {
                   _notificationsEnabled = value;
@@ -155,7 +157,10 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: const Icon(Icons.help_outline, color: Colors.white),
               label: const Text(
                 'Help',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Zubilo',
+                    fontSize: 18),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 49, 49, 49),
@@ -177,7 +182,10 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: const Icon(Icons.star, color: Colors.white),
               label: const Text(
                 'Credits',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Zubilo',
+                    fontSize: 18),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 49, 49, 49),

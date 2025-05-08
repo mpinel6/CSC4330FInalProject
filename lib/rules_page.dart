@@ -329,11 +329,11 @@ class RulesContentState extends State<RulesContent> {
                 child: const Text(
                   "Remember, at Joker's Joint, it's not whether you win or lose... it's how well you deceive!",
                   style: TextStyle(
-                    fontSize: 18,
-                    fontStyle: FontStyle.italic,
-                    color: Color.fromARGB(255, 49, 49, 49),
-                    fontWeight: FontWeight.bold,
-                  ),
+                      fontSize: 20,
+                      fontStyle: FontStyle.italic,
+                      color: Color.fromARGB(255, 49, 49, 49),
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Zubilo'),
                 ),
               ),
             ),

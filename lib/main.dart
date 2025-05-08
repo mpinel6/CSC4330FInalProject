@@ -352,51 +352,80 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _showLanTestOptions(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        backgroundColor: Colors.brown[200],
-        title: const Text('Multiplayer Options'),
-        content: const Text('Choose a role:'),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('HOST GAME', 
-              style: TextStyle(
-                color: Colors.brown, 
-                fontWeight: FontWeight.bold
-              )
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.brown[50],
+          title: const Text(
+            'Multiplayer Options',
+            style: TextStyle(
+              fontFamily: 'Zubilo',
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              shadows: [
+                Shadow(offset: Offset(-2, -2), color: Colors.black),
+                Shadow(offset: Offset(2, -2), color: Colors.black),
+                Shadow(offset: Offset(-2, 2), color: Colors.black),
+                Shadow(offset: Offset(2, 2), color: Colors.black),
+                Shadow(offset: Offset(0, -2), color: Colors.black),
+                Shadow(offset: Offset(0, 2), color: Colors.black),
+                Shadow(offset: Offset(-2, 0), color: Colors.black),
+                Shadow(offset: Offset(2, 0), color: Colors.black),
+                Shadow(offset: Offset(-1, -1), color: Colors.black),
+                Shadow(offset: Offset(1, -1), color: Colors.black),
+                Shadow(offset: Offset(-1, 1), color: Colors.black),
+                Shadow(offset: Offset(1, 1), color: Colors.black),
+              ],
             ),
-            onPressed: () {
-              Navigator.of(context).pop();
-              AudioManager().stopMusic();
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CreateGamePage()),
-              );
-            },
           ),
-          TextButton(
-            child: const Text('JOIN GAME', 
+          content: const Text('Choose a role:',
               style: TextStyle(
-                color: Colors.brown, 
-                fontWeight: FontWeight.bold
-              )
+                fontFamily: "Zubilo",
+                fontSize: 20,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              )),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('HOST GAME',
+                  style: TextStyle(
+                      fontFamily: "Zubilo",
+                      fontSize: 16,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.of(context).pop();
+                AudioManager().stopMusic();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const CreateGamePage()),
+                );
+              },
             ),
-            onPressed: () {
-              Navigator.of(context).pop();
-              AudioManager().stopMusic();
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const JoinGamePage()),
-              );
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
+            TextButton(
+              child: const Text('JOIN GAME',
+                  style: TextStyle(
+                      fontFamily: "Zubilo",
+                      fontSize: 16,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.of(context).pop();
+                AudioManager().stopMusic();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const JoinGamePage()),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class RulesLayout extends StatelessWidget {
