@@ -181,70 +181,123 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
     
     // Listen to state updates from network
     _stateSubscription = _gameStateManager.stateStream.listen(
-      (state) {
-        print('Received game state update: $state');
-        if (mounted) {
-          setState(() {
-            // Update game state from network
-            tableDisplayer = state['tableDisplayer'] ?? tableDisplayer;
+  (state) {
+    print('Received game state update: $state');
+    if (mounted) {
+      setState(() {
+        // Update token values from state first
+        if (state.containsKey('player1Tokens')) {
+          _player1Tokens = state['player1Tokens'];
+        }
+        if (state.containsKey('player2Tokens')) {
+          _player2Tokens = state['player2Tokens'];
+        }
 
-            _hasDealt = state['hasDealt'] ?? _hasDealt;
-            _isPlayer1Turn = state['isPlayer1Turn'] ?? _isPlayer1Turn;
-            _hasPressedLiar = state['hasPressedLiar'] ?? _hasPressedLiar;
-            _isPlayerCallingLiar = state['isPlayerCallingLiar'] ?? _isPlayerCallingLiar;
+        // Standard state updates
+        tableDisplayer = state['tableDisplayer'] ?? tableDisplayer;
+        _hasDealt = state['hasDealt'] ?? _hasDealt;
+        _isPlayer1Turn = state['isPlayer1Turn'] ?? _isPlayer1Turn;
+        _hasPressedLiar = state['hasPressedLiar'] ?? _hasPressedLiar;
+        _isPlayerCallingLiar = state['isPlayerCallingLiar'] ?? _isPlayerCallingLiar;
 
-            _isHostReady = state['isHostReady'] ?? _isHostReady;
-            _isClientReady = state['isClientReady'] ?? _isClientReady;
+        _isHostReady = state['isHostReady'] ?? _isHostReady;
+        _isClientReady = state['isClientReady'] ?? _isClientReady;
+        
+        // Round management state
+        _currentRound = state['currentRound'] ?? _currentRound;
+        _player1RoundWins = state['player1RoundWins'] ?? _player1RoundWins;
+        _player2RoundWins = state['player2RoundWins'] ?? _player2RoundWins;
+        _isRoundOver = state['isRoundOver'] ?? _isRoundOver;
+        _discardPile = List<String>.from(state['discardPile'] ?? _discardPile);
 
-            // Add these lines for round management state
-            _currentRound = state['currentRound'] ?? _currentRound;
-            _player1RoundWins = state['player1RoundWins'] ?? _player1RoundWins;
-            _player2RoundWins = state['player2RoundWins'] ?? _player2RoundWins;
-            _isRoundOver = state['isRoundOver'] ?? _isRoundOver;
-            _discardPile = List<String>.from(state['discardPile'] ?? _discardPile);
+        _selectedCards = List<Map<String, dynamic>>.from(state['selectedCards'] ?? _selectedCards);
+        _player2Cards = List<Map<String, dynamic>>.from(state['player2Cards'] ?? _player2Cards);
+        _topLeftCard = state['topLeftCard'] ?? _topLeftCard;
+        _cardSelections = Map<String, bool>.from(state['cardSelections'] ?? _cardSelections);
+        _player2CardSelections = Map<String, bool>.from(state['player2CardSelections'] ?? _player2CardSelections);
+        _lastPlayedCards = List<Map<String, dynamic>>.from(state['lastPlayedCards'] ?? _lastPlayedCards);
+        _deck = List<String>.from(state['deck'] ?? _deck);
+        
+        // Card animations
+        if (state.containsKey('cardsJustDealt') && state['cardsJustDealt'] == true) {
+          _triggerCardAnimations();
+        }
 
-            _selectedCards = List<Map<String, dynamic>>.from(state['selectedCards'] ?? _selectedCards);
-            _player2Cards = List<Map<String, dynamic>>.from(state['player2Cards'] ?? _player2Cards);
-            _topLeftCard = state['topLeftCard'] ?? _topLeftCard;
-            _cardSelections = Map<String, bool>.from(state['cardSelections'] ?? _cardSelections);
-            _player2CardSelections = Map<String, bool>.from(state['player2CardSelections'] ?? _player2CardSelections);
-            _lastPlayedCards = List<Map<String, dynamic>>.from(state['lastPlayedCards'] ?? _lastPlayedCards);
-            _player1Tokens = state['player1Tokens'] ?? _player1Tokens;
-            _player2Tokens = state['player2Tokens'] ?? _player2Tokens;
-            _deck = List<String>.from(state['deck'] ?? _deck);
-            
-            // If cards were just dealt, trigger animations
-            if (state.containsKey('cardsJustDealt') && state['cardsJustDealt'] == true) {
-              _triggerCardAnimations();
-            }
+        if (state.containsKey('cardsReplenished') && state['cardsReplenished'] == true) {
+          _triggerCardAnimations();
+        }
 
-            // Add this block to handle card replenishment
-            if (state.containsKey('cardsReplenished') && state['cardsReplenished'] == true) {
-              _triggerCardAnimations();  // Reuse the same animation for replenishment
-            }
-
-            if (state.containsKey('replenishClient') && state['replenishClient'] == true && widget.isHost) {
-            _replenishPlayerCards(false);  // Replenish client's cards
-            }
-            
-            // Update log with game state changes
-            final timestamp = DateTime.now().toString().substring(11, 19);
-            if (state.containsKey('logMessage')) {
-              gameLog.add('[$timestamp] ${state['logMessage']}');
-              if (gameLog.length > 20) gameLog.removeAt(0);
+        // Client card replenishment
+        if (state.containsKey('replenishClient') && state['replenishClient'] == true && widget.isHost) {
+          _replenishPlayerCards(false);
+        }
+        
+        // Update log with game state changes
+        final timestamp = DateTime.now().toString().substring(11, 19);
+        if (state.containsKey('logMessage')) {
+          gameLog.add('[$timestamp] ${state['logMessage']}');
+          if (gameLog.length > 20) gameLog.removeAt(0);
+        }
+        
+        // CLIENT-SPECIFIC UI UPDATES
+        
+        // 1. Trigger round end dialog for client when round is over
+        if (!widget.isHost && state.containsKey('isRoundOver') && state['isRoundOver'] == true) {
+          // Use future to avoid showing dialog during setState
+          Future.microtask(() {
+            if (mounted) _endRound();
+          });
+        }
+        
+        // 2. Handle liar result on client side
+        if (!widget.isHost && state.containsKey('hasPressedLiar') && !state['hasPressedLiar'] && _hasPressedLiar) {
+          // Get the result from token changes
+          bool hostLost = state.containsKey('player1Tokens') && 
+              state['player1Tokens'] < _player1Tokens;
+          bool clientLost = state.containsKey('player2Tokens') && 
+              state['player2Tokens'] < _player2Tokens;
+              
+          if (hostLost || clientLost) {
+            Future.microtask(() {
+              if (mounted) {
+                // Show animation with correct result (if all cards matched, host lost)
+                bool allCardsMatched = hostLost;
+                _showCpuPlayIndicator(0, true, allCardsMatched);
+              }
+            });
+          }
+        }
+        
+        // 3. Handle match end for client
+        if (!widget.isHost && 
+            ((_player1RoundWins >= 2 || _player2RoundWins >= 2) && _currentRound > 1)) {
+          Future.microtask(() {
+            if (mounted) {
+              _showWinDialog(_player1RoundWins > _player2RoundWins ? 'Host' : 'Client');
             }
           });
         }
-      },
-      onError: (error) {
-        print('Error in state stream: $error');
-        if (mounted) {
-          setState(() {
-            gameLog.add('Error: $error');
+        
+        // Check for game over after token values are updated
+        if (state.containsKey('player1Tokens') || state.containsKey('player2Tokens')) {
+          Future.microtask(() {
+            if (mounted && widget.isHost) {
+              _checkGameOver();
+            }
           });
         }
-      }
-    );
+      });
+    }
+  },
+  onError: (error) {
+    print('Error in state stream: $error');
+    if (mounted) {
+      setState(() {
+        gameLog.add('Error: $error');
+      });
+    }
+  }
+);
     
     // Initialize game state if host
     if (widget.isHost) {
@@ -510,16 +563,29 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
   }
 
   void _playSelectedCards() {
-  if (widget.isHost && maxCards3() <= 3) {
+  // Only allow playing up to 3 cards at a time
+  if (maxCards3() > 3) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('You can only play up to 3 cards at once!'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+  
+  if (widget.isHost) {
+    // Host implementation
     tableDisplayer = 1;
     
-    // Host implementation
+    // Get selected cards from host's hand
     final selectedCardsList = _selectedCards
         .where((card) => _cardSelections['${card['id']}'] == true)
         .toList();
     
     if (selectedCardsList.isEmpty) return;
     
+    // Find remaining cards in hand after playing
     final remainingCards = _selectedCards
         .where((card) => _cardSelections['${card['id']}'] != true)
         .toList();
@@ -528,13 +594,6 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
     List<String> updatedDiscardPile = List<String>.from(_discardPile);
     for (var card in selectedCardsList) {
       updatedDiscardPile.add(card['value']);
-    }
-    
-    // Check if player needs new cards
-    if (remainingCards.isEmpty) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        _replenishPlayerCards(true);
-      });
     }
     
     // Send action through game state manager
@@ -550,8 +609,17 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
     };
     
     _gameStateManager.updateState(gameState);
-  } else if (maxCards3() <= 3) {
+    
+    // Check if host needs new cards
+    if (remainingCards.isEmpty) {
+      gameLog.add('Host ran out of cards, replenishing...');
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _replenishPlayerCards(true);
+      });
+    }
+  } else {
     // Client implementation
+    // Get selected cards from client's hand
     final selectedCardsList = _player2Cards
         .where((card) => _player2CardSelections['${card['id']}'] == true)
         .toList();
@@ -573,9 +641,20 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
     
     // Check if client needs new cards
     if (_player2Cards.isEmpty) {
-      widget.multiplayerService.sendGameAction('requestCards', {});
+      gameLog.add('Client ran out of cards, requesting more...');
+      widget.multiplayerService.sendGameAction('requestCards', {
+        'playerNeedsCards': true
+      });
     }
   }
+  
+  // Show animation for card play
+  _showCpuPlayIndicator(
+    widget.isHost
+        ? _selectedCards.where((card) => _cardSelections['${card['id']}'] == true).length
+        : _player2Cards.where((card) => _player2CardSelections['${card['id']}'] == true).length,
+    false
+  );
 }
 
   // Update the liar check function to handle discard logic
@@ -624,47 +703,56 @@ void _checkLiar() {
         
       // Update tokens based on the result
       if (allCardsMatch) {
-        gameState['player1Tokens'] = _player1Tokens - 1;
-        gameState['logMessage'] = 'Host called Liar incorrectly and lost a token';
-      } else {
-        gameState['player2Tokens'] = _player2Tokens - 1;
-        gameState['logMessage'] = 'Host called Liar correctly! Client lost a token';
-      }
+  int newTokenCount = _player1Tokens - 1;
+  gameState['player1Tokens'] = _player1Tokens;
+  gameState['logMessage'] = 'Host called Liar incorrectly and lost a token. Host tokens: $_player1Tokens';
+} else {
+  int newTokenCount = _player2Tokens - 1;
+  gameState['player2Tokens'] = _player2Tokens;
+  gameState['logMessage'] = 'Host called Liar correctly! Client lost a token. Client tokens: $_player2Tokens';
+}
       
       _gameStateManager.updateState(gameState);
       
       // Check for game over
       _checkGameOver();
+
     });
   } else {
     // Client implementation - send liar call to host
     widget.multiplayerService.sendGameAction('checkLiar', {});
+    
   }
 }
 
   void _endRound() {
-  // Determine the winner of the current round
   bool player1WinsRound = _player1Tokens > _player2Tokens;
-
-  // Only the host should update the round state
+  
+  // Update round wins counters
+  if (player1WinsRound) {
+    _player1RoundWins += 1;
+  } else {
+    _player2RoundWins += 1;
+  }
+  
+  // If host is ending the round, update the full game state for both players
   if (widget.isHost) {
-    final gameState = {
+    _gameStateManager.updateState({
       'isRoundOver': true,
-      'player1RoundWins': player1WinsRound ? _player1RoundWins + 1 : _player1RoundWins,
-      'player2RoundWins': !player1WinsRound ? _player2RoundWins + 1 : _player2RoundWins,
-      'logMessage': player1WinsRound ? 'Host wins round $_currentRound!' : 'Client wins round $_currentRound!'
-    };
-    
-    _gameStateManager.updateState(gameState);
+      'player1RoundWins': _player1RoundWins,
+      'player2RoundWins': _player2RoundWins,
+      'player1Tokens': _player1Tokens,  // Ensure tokens are explicitly included
+      'player2Tokens': _player2Tokens,  // Ensure tokens are explicitly included
+      'logMessage': '${player1WinsRound ? "Host" : "Client"} wins round $_currentRound!'
+    });
   }
 
-  // Show round results dialog
+  // Both host and client show the round end dialog
   showDialog(
     context: context,
-    barrierDismissible: false,
+    barrierDismissible: false, // User must respond to dialog
     builder: (BuildContext context) {
       return AlertDialog(
-        backgroundColor: Colors.brown[50],
         title: Center(
           child: Text(
             'Round $_currentRound Complete!',
@@ -673,20 +761,7 @@ void _checkLiar() {
               fontSize: 30,
               fontWeight: FontWeight.bold,
               color: Colors.white,
-              shadows: [
-                Shadow(offset: Offset(-2, -2), color: Colors.black),
-                Shadow(offset: Offset(2, -2), color: Colors.black),
-                Shadow(offset: Offset(-2, 2), color: Colors.black),
-                Shadow(offset: Offset(2, 2), color: Colors.black),
-                Shadow(offset: Offset(0, -2), color: Colors.black),
-                Shadow(offset: Offset(0, 2), color: Colors.black),
-                Shadow(offset: Offset(-2, 0), color: Colors.black),
-                Shadow(offset: Offset(2, 0), color: Colors.black),
-                Shadow(offset: Offset(-1, -1), color: Colors.black),
-                Shadow(offset: Offset(1, -1), color: Colors.black),
-                Shadow(offset: Offset(-1, 1), color: Colors.black),
-                Shadow(offset: Offset(1, 1), color: Colors.black),
-              ],
+              shadows: [/* Your shadow implementation */],
             ),
           ),
         ),
@@ -714,20 +789,20 @@ void _checkLiar() {
         ),
         actions: <Widget>[
           TextButton(
-            child: const Text(
-              'Next Round',
-              style: TextStyle(
-                fontFamily: 'Zubilo',
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                shadows: [/* shadows as in original */],
-              ),
-            ),
+            child: const Text('Continue'),
             onPressed: () {
               Navigator.of(context).pop();
-              if (widget.isHost) {
-                _startNewRound();
+              
+              // After dialog is closed, start new round or end match
+              if (_player1RoundWins >= 2 || _player2RoundWins >= 2 || _currentRound >= 3) {
+                Future.microtask(() {
+                  if (mounted) _endMatch();
+                });
+              } else {
+                // Only host should trigger new round
+                if (widget.isHost) {
+                  _startNewRound();
+                }
               }
             },
           ),
@@ -834,20 +909,15 @@ void _endMatch() {
 void _replenishPlayerCards(bool isHost) {
   if (!widget.isHost) return; // Only host manages deck
   
-  // First check if we need to reshuffle
-  List<String> updatedDeck = List<String>.from(_deck);
-  List<String> updatedDiscardPile = List<String>.from(_discardPile);
-  
-  // Use our dedicated method instead of duplicating logic
-  if (updatedDeck.isEmpty && updatedDiscardPile.isNotEmpty) {
-    _reshuffleDiscardPile(); // Call the reshuffleDiscardPile method
-    
-    // Refresh our local copies after the reshuffle
-    updatedDeck = List<String>.from(_deck);
-    updatedDiscardPile = List<String>.from(_discardPile);
+  // Reset the deck if needed
+  if (_deck.isEmpty) {
+    _reshuffleDiscardPile();
   }
   
-  // If deck is still empty after potential reshuffle
+  // Get the updated deck after potential reset
+  List<String> updatedDeck = List<String>.from(_deck);
+  
+  // If deck is still empty, show error message
   if (updatedDeck.isEmpty) {
     final message = 'No cards available to draw!';
     _gameStateManager.updateState({
@@ -877,7 +947,6 @@ void _replenishPlayerCards(bool isHost) {
       'selectedCards': newCards,
       'cardSelections': {for (var card in newCards) '${card['id']}': false},
       'deck': updatedDeck,
-      'discardPile': updatedDiscardPile,
       'logMessage': 'Host drew $cardsToAdd new cards',
       'cardsReplenished': true
     });
@@ -886,52 +955,99 @@ void _replenishPlayerCards(bool isHost) {
       'player2Cards': newCards,
       'player2CardSelections': {for (var card in newCards) '${card['id']}': false},
       'deck': updatedDeck,
-      'discardPile': updatedDiscardPile,
-      'logMessage': 'Client drew $cardsToAdd new cards'
+      'logMessage': 'Client drew $cardsToAdd new cards',
+      'replenishClient': false  // IMPORTANT: Reset flag to prevent infinite loop
     });
   }
 }
 
 void _reshuffleDiscardPile() {
-  // Only the host should manage the deck
-  if (!widget.isHost) return;
+  if (!widget.isHost) return; // Only host should reset the deck
   
-  if (_discardPile.isNotEmpty) {
-    // Create local copies of the data to work with
-    List<String> updatedDeck = List<String>.from(_deck);
-    List<String> updatedDiscardPile = List<String>.from(_discardPile);
-    
-    // Move all cards from discard pile back to the deck
-    updatedDeck.addAll(updatedDiscardPile);
-    updatedDiscardPile.clear();
-    
-    // Shuffle the deck
-    final random = Random();
-    updatedDeck.shuffle(random);
-    
-    // Update game state via GameStateManager
-    _gameStateManager.updateState({
-      'deck': updatedDeck,
-      'discardPile': updatedDiscardPile,
-      'logMessage': 'Reshuffled discard pile into deck (${updatedDeck.length} cards total)'
-    });
-  } else {
-    // No cards to reshuffle - log this information
-    _gameStateManager.updateState({
-      'logMessage': 'No cards in discard pile to reshuffle'
-    });
-  }
+  // Reset to original deck configuration
+  _deck = [
+    'Ace', 'Ace', 'Ace', 'Ace', 'Ace', 'Ace',
+    'King', 'King', 'King', 'King', 'King', 'King',
+    'Queen', 'Queen', 'Queen', 'Queen', 'Queen', 'Queen',
+    'Joker', 'Joker'
+  ];
+  
+  // Shuffle the deck
+  final random = Random();
+  _deck.shuffle(random);
+  
+  // Clear discard pile since we're using a fresh deck
+  _discardPile = [];
+  
+  // Update game state with fresh deck
+  _gameStateManager.updateState({
+    'deck': _deck,
+    'discardPile': _discardPile,
+    'logMessage': 'Deck has been reset to original configuration'
+  });
 }
 
+//   // Only the host should manage the deck
+//   if (!widget.isHost) return;
+  
+//   if (_discardPile.isNotEmpty) {
+//     // Create local copies of the data to work with
+//     List<String> updatedDeck = List<String>.from(_deck);
+//     List<String> updatedDiscardPile = List<String>.from(_discardPile);
+    
+//     // Move all cards from discard pile back to the deck
+//     updatedDeck.addAll(updatedDiscardPile);
+//     updatedDiscardPile.clear();
+    
+//     // Shuffle the deck
+//     final random = Random();
+//     updatedDeck.shuffle(random);
+    
+//     // Update game state via GameStateManager
+//     _gameStateManager.updateState({
+//       'deck': updatedDeck,
+//       'discardPile': updatedDiscardPile,
+//       'logMessage': 'Reshuffled discard pile into deck (${updatedDeck.length} cards total)'
+//     });
+//   } else {
+//     // No cards to reshuffle - log this information
+//     _gameStateManager.updateState({
+//       'logMessage': 'No cards in discard pile to reshuffle'
+//     });
+//   }
+// }
+
 void _checkGameOver() {
+
   if (!widget.isHost) return; // Only host checks game over state
   
+  // Debug logs to see actual token values
+  print('Checking game over - P1 tokens: $_player1Tokens, P2 tokens: $_player2Tokens');
+  
+  // Fix the condition to properly check if either player has 0 or fewer tokens
   if (_player1Tokens <= 0 || _player2Tokens <= 0) {
+    gameLog.add('Game over triggered - P1: $_player1Tokens, P2: $_player2Tokens');
+    
     // End the round when a player runs out of tokens
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      _endRound();
+    // Use microtask to ensure this happens after the current frame is built
+    Future.microtask(() {
+      if (mounted) {
+        _endRound();
+      }
     });
   }
+  // Check if either player has won the match
+  if (_player1RoundWins >= 2 || _player2RoundWins >= 2) {
+    gameLog.add('Match over - P1: $_player1RoundWins, P2: $_player2RoundWins');
+    
+    // Show the match result dialog
+    Future.microtask(() {
+      if (mounted) {
+        _showWinDialog(_player1RoundWins > _player2RoundWins ? 'Host' : 'Client');
+      }
+    });
+  }
+
 }
 
   void _showWinDialog(String winner) {
@@ -1033,36 +1149,32 @@ void dispose() {
 }
 
   @override
-  Widget build(BuildContext context) {
-    // Determine if it's my turn based on host status
-    bool isMyTurn = widget.isHost ? _isPlayer1Turn : !_isPlayer1Turn;
-    
-    String displayTurn;
-    if (_isPlayer1Turn) {
-      displayTurn = widget.isHost ? 'Your Turn' : 'Host\'s Turn';
-    } else {
-      displayTurn = widget.isHost ? 'Client\'s Turn' : 'Your Turn';
-    }
+Widget build(BuildContext context) {
+  // Determine if it's my turn based on host status
+  bool isMyTurn = widget.isHost ? _isPlayer1Turn : !_isPlayer1Turn;
+  
+  String displayTurn;
+  if (_isPlayer1Turn) {
+    displayTurn = widget.isHost ? 'Your Turn' : 'Host\'s Turn';
+  } else {
+    displayTurn = widget.isHost ? 'Client\'s Turn' : 'Your Turn';
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Multiplayer Card Game - ${widget.isHost ? "HOST" : "CLIENT"}'),
-        backgroundColor: widget.isHost ? Colors.brown[700] : Colors.brown[500],
-      ),
-      backgroundColor: Colors.brown[100],
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/backgroundimage.png'),
-            fit: BoxFit.cover,
-          ),
+  return Scaffold(
+    backgroundColor: Colors.brown[100],
+    body: Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/backgroundimage.png'),
+          fit: BoxFit.cover,
         ),
-        child: Stack(
-          children: [
-            // Table and middle sprite - Fixed position
-            Positioned.fill(
-              child: Stack(
-                children: [
+      ),
+      child: Stack(
+        children: [
+          // Table and middle sprite - Fixed position
+          Positioned.fill(
+            child: Stack(
+              children: [
                   // Table
                   Positioned(
                     bottom: -MediaQuery.of(context).size.height * 1,
@@ -1104,21 +1216,21 @@ void dispose() {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   // Player 2 token display
-                                  Text(
-                                    widget.isHost ? 'Client' : 'Host', 
-                                    style: _cpuStyle
-                                  ),
+                                  // Text(
+                                  //   widget.isHost ? 'Client' : 'Host', 
+                                  //   style: _cpuStyle
+                                  // ),
                                   const SizedBox(width: 6),
-                                  const Icon(
-                                    Icons.stars,
-                                    color: Colors.white, 
-                                    size: 20
-                                  ),
+                                  // const Icon(
+                                  //   Icons.stars,
+                                  //   color: Colors.white, 
+                                  //   size: 20
+                                  // ),
                                   const SizedBox(width: 6),
-                                  Text(
-                                    '$_player2Tokens',
-                                    style: _cpuTokenStyle
-                                  ),
+                                  // Text(
+                                  //   widget.isHost ? '$_player2Tokens' : '$_player1Tokens',
+                                  //   style: _cpuTokenStyle
+                                  // ),
                                 ],
                               ),
                             ),
@@ -1186,16 +1298,16 @@ void dispose() {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                  Icons.stars,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
+                                // const Icon(
+                                //   Icons.stars,
+                                //   color: Colors.white,
+                                //   size: 20,
+                                // ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  '$_player1Tokens',
-                                  style: _cpuTokenStyle,
-                                ),
+                                // Text(
+                                //   '$_player1Tokens',
+                                //   style: _cpuTokenStyle,
+                                // ),
                               ],
                             ),
                           const SizedBox(width: 20),
@@ -1242,22 +1354,22 @@ void dispose() {
                         children: <Widget>[
                           if (_hasDealt) ...[
                             // Game information
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                'Game Code: ${widget.gameCode}',
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ),
+                            // Container(
+                            //   padding: const EdgeInsets.all(8),
+                            //   decoration: BoxDecoration(
+                            //     color: Colors.black.withOpacity(0.5),
+                            //     borderRadius: BorderRadius.circular(10),
+                            //   ),
+                            //   // child: Text(
+                            //   //   'Game Code: ${widget.gameCode}',
+                            //   //   style: const TextStyle(color: Colors.white),
+                            //   // ),
+                            // ),
                             const SizedBox(height: 8),
                             
                             // Game log
                             Container(
-                              height: 100,
+                              height: 80,
                               decoration: BoxDecoration(
                                 color: Colors.black.withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(8),
