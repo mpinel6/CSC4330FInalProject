@@ -149,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           const SizedBox(height: 40),
-          Column(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Flexible(child: _buildButton('Play LAN', _showLanTestOptions)),
