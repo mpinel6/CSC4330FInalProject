@@ -1484,28 +1484,60 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       bottomNavigationBar: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        height: _isNavBarVisible ? kBottomNavigationBarHeight : 0,
-        child: SingleChildScrollView(
-          child: BottomNavigationBar(
-            items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home),
-                label: 'Home',
+        height: _isNavBarVisible ? kBottomNavigationBarHeight + 40 : 0,
+        child: ClipRect(
+          // Prevents overflow during animation
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            heightFactor: _isNavBarVisible ? 1.0 : 0.0,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: BottomNavigationBar(
+                  items: <BottomNavigationBarItem>[
+                    BottomNavigationBarItem(
+                      icon: Image.asset(
+                        'assets/images/Beer.png',
+                        width: 35,
+                        height: 35,
+                      ),
+                      label: 'Home',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Image.asset(
+                        'assets/images/Question.png',
+                        width: 35,
+                        height: 35,
+                      ),
+                      label: 'Rules',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Image.asset(
+                        'assets/images/Settings.png',
+                        width: 35,
+                        height: 35,
+                      ),
+                      label: 'Settings',
+                    ),
+                  ],
+                  currentIndex: _selectedIndex,
+                  selectedItemColor: const Color(0xFF232323),
+                  unselectedItemColor: const Color(0xFFB0B0B0),
+                  backgroundColor: const Color(0xFFD6D6D6),
+                  selectedLabelStyle: const TextStyle(
+                    fontFamily: 'Zubilo',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontFamily: 'Zubilo',
+                    fontSize: 14,
+                  ),
+                  onTap: _onItemTapped,
+                ),
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.book),
-                label: 'Rules',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.settings),
-                label: 'Settings',
-              ),
-            ],
-            currentIndex: _selectedIndex,
-            selectedItemColor: const Color(0xFF232323),
-            unselectedItemColor: const Color(0xFFB0B0B0),
-            backgroundColor: const Color(0xFFD6D6D6),
-            onTap: _onItemTapped,
+            ),
           ),
         ),
       ),

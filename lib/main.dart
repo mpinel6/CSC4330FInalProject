@@ -33,7 +33,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
   final String title;
 
   @override
@@ -41,16 +40,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
   int _selectedIndex = 0;
-  double _logoOpacity = 0.0;
+  double _logoOpacity = 1.0;
   bool _isFirstLoad = true;
 
   @override
   void initState() {
     super.initState();
-    _selectedIndex = 0;
-    _logoOpacity = 1.0;
     if (_isFirstLoad) {
       AudioManager().playMusic('assets/sound/BG_Music.mp3');
       _isFirstLoad = false;
@@ -58,96 +54,43 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
-  @override
   void dispose() {
-    if (!mounted) {
-      AudioManager().stopMusic();
-    }
+    AudioManager().stopMusic();
     super.dispose();
   }
 
-  void _incrementCounter() {
+  void _onItemTapped(int index) {
     setState(() {
-      _counter++;
+      _selectedIndex = index;
     });
   }
 
-  void _onItemTapped(int index) {
-    if (index == 0) {
-      if (_selectedIndex != 0) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
-      setState(() {
-        _selectedIndex = 0;
-      });
-    } else if (index == 1) {
-      setState(() {
-        _selectedIndex = 1;
-      });
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const RulesPage()),
-      );
-    } else if (index == 2) {
-      setState(() {
-        _selectedIndex = 2;
-      });
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const SettingsPage()),
-      );
-    }
-  }
+  // Pages to show based on tab selection
+  late final List<Widget> _pages = [
+    _buildHomeContent(),
+    const RulesPage(),
+    const SettingsPage(),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final bool isPortrait =
-        MediaQuery.of(context).orientation == Orientation.portrait;
-
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 161, 159, 159),
-      body: Column(
-        children: [
-          const SizedBox(height: 50),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return isPortrait
-                    ? _buildPortraitLayout()
-                    : _buildLandscapeLayout();
-              },
-            ),
-          ),
-        ],
-      ),
+      body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Image.asset(
-              'assets/images/Beer.png',
-              width: 35,
-              height: 35,
-            ),
+            icon: Image.asset('assets/images/Beer.png', width: 35, height: 35),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Image.asset(
-              'assets/images/Question.png',
-              width: 35,
-              height: 35,
-            ),
+            icon: Image.asset('assets/images/Question.png',
+                width: 35, height: 35),
             label: 'Rules',
           ),
           BottomNavigationBarItem(
-            icon: Image.asset(
-              'assets/images/Settings.png',
-              width: 35,
-              height: 35,
-            ),
+            icon: Image.asset('assets/images/Settings.png',
+                width: 35, height: 35),
             label: 'Settings',
           ),
         ],
@@ -169,12 +112,21 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  Widget _buildHomeContent() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isPortrait =
+            MediaQuery.of(context).orientation == Orientation.portrait;
+        return isPortrait ? _buildPortraitLayout() : _buildLandscapeLayout();
+      },
+    );
+  }
+
   Widget _buildPortraitLayout() {
     return SingleChildScrollView(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: <Widget>[
-          const SizedBox(height: 60),
+        children: [
+          const SizedBox(height: 100),
           const Text(
             'Welcome to',
             style: TextStyle(
@@ -182,20 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
               color: Colors.white,
               fontFamily: 'Zubilo',
               fontWeight: FontWeight.bold,
-              shadows: [
-                Shadow(offset: Offset(-2, -2), color: Colors.black),
-                Shadow(offset: Offset(2, -2), color: Colors.black),
-                Shadow(offset: Offset(-2, 2), color: Colors.black),
-                Shadow(offset: Offset(2, 2), color: Colors.black),
-                Shadow(offset: Offset(0, -2), color: Colors.black),
-                Shadow(offset: Offset(0, 2), color: Colors.black),
-                Shadow(offset: Offset(-2, 0), color: Colors.black),
-                Shadow(offset: Offset(2, 0), color: Colors.black),
-                Shadow(offset: Offset(-1, -1), color: Colors.black),
-                Shadow(offset: Offset(1, -1), color: Colors.black),
-                Shadow(offset: Offset(-1, 1), color: Colors.black),
-                Shadow(offset: Offset(1, 1), color: Colors.black),
-              ],
+              shadows: textShadows,
             ),
             textAlign: TextAlign.center,
           ),
@@ -213,30 +152,22 @@ class _MyHomePageState extends State<MyHomePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              Flexible(child: _buildButton('Play LAN', _showLanTestOptions)),
               Flexible(
-                child: buildButton('Play LAN', () {
-                  AudioManager().stopMusic();
-                  _showLanTestOptions(context);
-                }),
-              ),
-              Flexible(
-                child: buildButton('Play AI', () {
-                  AudioManager().stopMusic();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const Gamevsai()),
-                  );
-                }),
-              ),
+                  child: _buildButton('Play AI', () {
+                AudioManager().stopMusic();
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const Gamevsai()));
+              })),
             ],
           ),
           const SizedBox(height: 20),
-          buildButton('QuickStartTest', () {
+          _buildButton('QuickStartTest', () {
             AudioManager().stopMusic();
             Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const mattgamecoding()),
-            );
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const mattgamecoding()));
           }),
           const SizedBox(height: 40),
         ],
@@ -247,15 +178,15 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _buildLandscapeLayout() {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 0.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               flex: 5,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  const SizedBox(height: 30),
                   const Text(
                     'Welcome to',
                     style: TextStyle(
@@ -263,24 +194,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       color: Colors.white,
                       fontFamily: 'Zubilo',
                       fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(offset: Offset(-2, -2), color: Colors.black),
-                        Shadow(offset: Offset(2, -2), color: Colors.black),
-                        Shadow(offset: Offset(-2, 2), color: Colors.black),
-                        Shadow(offset: Offset(2, 2), color: Colors.black),
-                        Shadow(offset: Offset(0, -2), color: Colors.black),
-                        Shadow(offset: Offset(0, 2), color: Colors.black),
-                        Shadow(offset: Offset(-2, 0), color: Colors.black),
-                        Shadow(offset: Offset(2, 0), color: Colors.black),
-                        Shadow(offset: Offset(-1, -1), color: Colors.black),
-                        Shadow(offset: Offset(1, -1), color: Colors.black),
-                        Shadow(offset: Offset(-1, 1), color: Colors.black),
-                        Shadow(offset: Offset(1, 1), color: Colors.black),
-                      ],
+                      shadows: textShadows,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 0),
                   AnimatedOpacity(
                     opacity: _logoOpacity,
                     duration: const Duration(seconds: 2),
@@ -296,21 +213,18 @@ class _MyHomePageState extends State<MyHomePage> {
             Expanded(
               flex: 5,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  buildButton('Play LAN', () {
-                    AudioManager().stopMusic();
-                    _showLanTestOptions(context);
-                  }),
+                  const SizedBox(height: 60),
+                  _buildButton('Play LAN', _showLanTestOptions),
                   const SizedBox(height: 20),
-                  buildButton('Play AI', () {
+                  _buildButton('Play AI', () {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => const Gamevsai()),
                     );
                   }),
                   const SizedBox(height: 20),
-                  buildButton('QuickStartTest', () {
+                  _buildButton('QuickStartTest', () {
                     AudioManager().stopMusic();
                     Navigator.pushReplacement(
                       context,
@@ -327,7 +241,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  static Widget buildButton(String label, VoidCallback onPressed) {
+  Widget _buildButton(String label, VoidCallback onPressed) {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
@@ -345,34 +259,13 @@ class _MyHomePageState extends State<MyHomePage> {
           color: Colors.white,
           fontFamily: 'Zubilo',
           fontWeight: FontWeight.bold,
-          shadows: [
-            Shadow(
-              offset: Offset(-1, -1),
-              color: Colors.black,
-              blurRadius: 0,
-            ),
-            Shadow(
-              offset: Offset(1, -1),
-              color: Colors.black,
-              blurRadius: 0,
-            ),
-            Shadow(
-              offset: Offset(-1, 1),
-              color: Colors.black,
-              blurRadius: 0,
-            ),
-            Shadow(
-              offset: Offset(1, 1),
-              color: Colors.black,
-              blurRadius: 0,
-            ),
-          ],
+          shadows: textShadows,
         ),
       ),
     );
   }
 
-  void _showLanTestOptions(BuildContext context) {
+  void _showLanTestOptions() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -385,20 +278,7 @@ class _MyHomePageState extends State<MyHomePage> {
               fontSize: 30,
               fontWeight: FontWeight.bold,
               color: Colors.white,
-              shadows: [
-                Shadow(offset: Offset(-2, -2), color: Colors.black),
-                Shadow(offset: Offset(2, -2), color: Colors.black),
-                Shadow(offset: Offset(-2, 2), color: Colors.black),
-                Shadow(offset: Offset(2, 2), color: Colors.black),
-                Shadow(offset: Offset(0, -2), color: Colors.black),
-                Shadow(offset: Offset(0, 2), color: Colors.black),
-                Shadow(offset: Offset(-2, 0), color: Colors.black),
-                Shadow(offset: Offset(2, 0), color: Colors.black),
-                Shadow(offset: Offset(-1, -1), color: Colors.black),
-                Shadow(offset: Offset(1, -1), color: Colors.black),
-                Shadow(offset: Offset(-1, 1), color: Colors.black),
-                Shadow(offset: Offset(1, 1), color: Colors.black),
-              ],
+              shadows: textShadows,
             ),
           ),
           content: const Text('Choose a role:',
@@ -449,14 +329,18 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class RulesLayout extends StatelessWidget {
-  const RulesLayout({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-      child: RulesContent(key: rulesContentKey),
-    );
-  }
-}
+// Shared shadow style
+const List<Shadow> textShadows = [
+  Shadow(offset: Offset(-2, -2), color: Colors.black),
+  Shadow(offset: Offset(2, -2), color: Colors.black),
+  Shadow(offset: Offset(-2, 2), color: Colors.black),
+  Shadow(offset: Offset(2, 2), color: Colors.black),
+  Shadow(offset: Offset(0, -2), color: Colors.black),
+  Shadow(offset: Offset(0, 2), color: Colors.black),
+  Shadow(offset: Offset(-2, 0), color: Colors.black),
+  Shadow(offset: Offset(2, 0), color: Colors.black),
+  Shadow(offset: Offset(-1, -1), color: Colors.black),
+  Shadow(offset: Offset(1, -1), color: Colors.black),
+  Shadow(offset: Offset(-1, 1), color: Colors.black),
+  Shadow(offset: Offset(1, 1), color: Colors.black),
+];
