@@ -58,6 +58,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   int _player2LuckyNumber = 0;
   List<int> _player1UsedNumbers = [];
   List<int> _player2UsedNumbers = [];
+  List<String> _discardPile = [];
+
   List<String> _deck = [
     'Ace',
     'Ace',
@@ -364,14 +366,19 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   void _cpuTurn() {
   // First check if CPU needs cards
   if (_player2Cards.isEmpty) {
-    // Try to replenish CPU's cards
+    // Check if we need to reshuffle first
+    if (_deck.isEmpty && _discardPile.isNotEmpty) {
+      _reshuffleDiscardPile();
+    }
+    
+    // Try to replenish CPU's cards after potential reshuffle
     _replenishCpuCards();
     
-    // If still empty after replenishment attempt (empty deck), pass turn
+    // If still empty after replenishment attempt, pass turn
     if (_player2Cards.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('CPU has no cards and deck is empty! Passing turn.'),
+          content: Text('CPU has no cards and no more cards available! Passing turn.'),
           backgroundColor: Colors.brown,
         ),
       );
@@ -399,7 +406,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     // CPU plays a card
     setState(() {
       _lastPlayedCards = [playCard];
-      _player2Cards.remove(playCard); // Use remove instead of removeAt(0) to remove the specific card
+      
+      // Add played card to discard pile
+      _discardPile.add(playCard['value']);
+      
+      // Remove the card from CPU's hand
+      _player2Cards.remove(playCard);
       _player2CardSelections.clear();
       _isPlayer1Turn = true;
       _hasPressedLiar = false;
@@ -410,6 +422,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     // Check if CPU needs cards after playing
     if (_player2Cards.isEmpty) {
       Future.delayed(const Duration(milliseconds: 2000), () {
+        // Check if we need to reshuffle
+        if (_deck.isEmpty && _discardPile.isNotEmpty) {
+          _reshuffleDiscardPile();
+        }
+        
         _replenishCpuCards();
       });
     }
@@ -438,6 +455,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             _player1Tokens -= 1;
           }
           _isPlayer1Turn = true;
+          
+          // Move the last played cards to discard pile after resolving liar call
+          for (var card in _lastPlayedCards) {
+            _discardPile.add(card['value']);
+          }
+          _lastPlayedCards = [];
         });
         
         // Check if game is over
@@ -447,6 +470,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       // Can't call liar if no cards have been played, so play a card instead
       setState(() {
         _lastPlayedCards = [playCard];
+        
+        // Add played card to discard pile
+        _discardPile.add(playCard['value']);
+        
+        // Remove from CPU's hand
         _player2Cards.remove(playCard);
         _player2CardSelections.clear();
         _isPlayer1Turn = true;
@@ -458,6 +486,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       // Check if CPU needs cards after playing
       if (_player2Cards.isEmpty) {
         Future.delayed(const Duration(milliseconds: 2000), () {
+          // Check if we need to reshuffle
+          if (_deck.isEmpty && _discardPile.isNotEmpty) {
+            _reshuffleDiscardPile();
+          }
+          
           _replenishCpuCards();
         });
       }
@@ -508,6 +541,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             .removeWhere((card) => _cardSelections['${card['id']}'] == true);
         _cardSelections.clear();
 
+        for (var card in _lastPlayedCards) {
+        _discardPile.add(card['value']);
+      }
+      
+      _selectedCards.removeWhere((card) => _cardSelections['${card['id']}'] == true);
+      _cardSelections.clear();
+
         // Check if player needs new cards
         if (_selectedCards.isEmpty) {
           _replenishPlayerCards();
@@ -522,44 +562,72 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     });
   }
 
-  void _replenishPlayerCards() {
-    if (_deck.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Deck is empty! No cards available to draw.'),
-          backgroundColor: Colors.brown,
-        ),
-      );
-      return;
-    }
-
-    // Generate 5 new cards (or fewer if deck is low)
-    final cardsToAdd = min(5, _deck.length);
-    
-    final random = Random();
-    List<Map<String, dynamic>> newCards = [];
-    
-    for (int i = 0; i < cardsToAdd; i++) {
-      final cardIndex = random.nextInt(_deck.length);
-      newCards.add({
-        'id': 100 + i, // Use high IDs to avoid conflicts
-        'value': _deck[cardIndex],
-      });
-      _deck.removeAt(cardIndex);
-    }
-    
+  void _reshuffleDiscardPile() {
+  if (_discardPile.isNotEmpty) {
     setState(() {
-      _selectedCards = newCards;
-      _cardSelections = {for (var card in _selectedCards) '${card['id']}': false};
+      // Move all cards from discard pile back to the deck
+      _deck.addAll(_discardPile);
+      _discardPile.clear();
+      
+      // Shuffle the deck
+      final random = Random();
+      _deck.shuffle(random);
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('You drew $cardsToAdd new cards!'),
+      const SnackBar(
+        content: Text('Discard pile reshuffled into the deck!'),
         backgroundColor: Colors.brown,
+        duration: Duration(seconds: 2),
       ),
     );
   }
+}
+
+  void _replenishPlayerCards() {
+  // First check if we need to reshuffle
+  if (_deck.isEmpty && _discardPile.isNotEmpty) {
+    _reshuffleDiscardPile();
+  }
+  
+  // If deck is still empty after potential reshuffle, show message and return
+  if (_deck.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Deck and discard pile are empty! No cards available to draw.'),
+        backgroundColor: Colors.brown,
+      ),
+    );
+    return;
+  }
+
+  // Generate 5 new cards (or fewer if deck is low)
+  final cardsToAdd = min(5, _deck.length);
+  
+  final random = Random();
+  List<Map<String, dynamic>> newCards = [];
+  
+  for (int i = 0; i < cardsToAdd; i++) {
+    final cardIndex = random.nextInt(_deck.length);
+    newCards.add({
+      'id': 100 + i, // Use high IDs to avoid conflicts
+      'value': _deck[cardIndex],
+    });
+    _deck.removeAt(cardIndex);
+  }
+  
+  setState(() {
+    _selectedCards = newCards;
+    _cardSelections = {for (var card in _selectedCards) '${card['id']}': false};
+  });
+  
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('You drew $cardsToAdd new cards!'),
+      backgroundColor: Colors.brown,
+    ),
+  );
+}
 
   void _replenishCpuCards() {
     if (_deck.isEmpty) {
@@ -638,6 +706,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           _player1Tokens -= 1;
         }
       }
+      
+      // Add the played cards to discard pile
+      for (var card in _lastPlayedCards) {
+        _discardPile.add(card['value']);
+      }
+      
+      // Clear the last played cards
+      _lastPlayedCards = [];
       
       // Reset the liar caller state
       _isPlayerCallingLiar = false;
