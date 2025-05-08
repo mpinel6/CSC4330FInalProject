@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'rules_page.dart';
 import 'settings.dart';
 import 'matt_home_page.dart';
@@ -175,6 +176,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+     SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
     _cardControllers = List.generate(
         5,
         (_) => AnimationController(
@@ -266,6 +273,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _playIndicatorController.dispose();
     _topCardController.dispose();
     _cpuPlayController.dispose();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     super.dispose();
   }
 
@@ -993,6 +1006,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     setState(() {
       _selectedIndex = index;
     });
+
+    SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
 
     if (index == 0) {
       // Home button index
