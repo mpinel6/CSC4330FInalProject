@@ -149,19 +149,29 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           const SizedBox(height: 40),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Flexible(child: _buildButton('Play LAN', _showLanTestOptions)),
-              Flexible(
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 200,
+                  height: 60,
+                  margin: const EdgeInsets.only(top: 0, bottom: 15),
+                  child: _buildButton('Play LAN', _showLanTestOptions),
+                ),
+                Container(
+                  width: 200,
+                  height: 60,
+                  margin: const EdgeInsets.only(top: 15, bottom: 0),
                   child: _buildButton('Play AI', () {
-                AudioManager().stopMusic();
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const Gamevsai()));
-              })),
-            ],
+                    AudioManager().stopMusic();
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => const Gamevsai()));
+                  }),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
           const SizedBox(height: 40),
         ],
       ),
@@ -205,19 +215,31 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             Expanded(
               flex: 5,
-              child: Column(
-                children: [
-                  const SizedBox(height: 60),
-                  _buildButton('Play LAN', _showLanTestOptions),
-                  const SizedBox(height: 20),
-                  _buildButton('Play AI', () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Gamevsai()),
-                    );
-                  }),
-                  const SizedBox(height: 20),
-                ],
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 100),
+                    Container(
+                      width: 200,
+                      height: 60,
+                      margin: const EdgeInsets.only(top: 0, bottom: 15),
+                      child: _buildButton('Play LAN', _showLanTestOptions),
+                    ),
+                    Container(
+                      width: 200,
+                      height: 60,
+                      margin: const EdgeInsets.only(top: 15, bottom: 0),
+                      child: _buildButton('Play AI', () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const Gamevsai()),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
           ],
