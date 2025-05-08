@@ -543,7 +543,29 @@ void _endMatch() {
   final random = Random();
   
   // IMPROVED: AI decision making - 30% chance to call liar if possible
-  bool shouldCallLiar = _lastPlayedCards.isNotEmpty && random.nextDouble() < 0.3;
+  bool shouldCallLiar = false;
+if (_lastPlayedCards.isNotEmpty) {
+  // Base probability - increased from 30% to 40%
+  double callLiarProbability = 0.4;
+  
+  // Adjust probability based on number of cards played (more cards = higher chance of bluff)
+  if (_lastPlayedCards.length > 1) {
+    callLiarProbability += 0.15 * (_lastPlayedCards.length - 1);
+  }
+  
+  // Adjust probability based on player's remaining cards (few cards = desperate moves)
+  if (_selectedCards.length <= 2) {
+    callLiarProbability += 0.2;
+  }
+  
+  // Make more aggressive calls when CPU has few tokens left (nothing to lose)
+  if (_player2Tokens == 1) {
+    callLiarProbability += 0.15;
+  }
+  
+  // Final decision
+  shouldCallLiar = random.nextDouble() < callLiarProbability;
+}
   
   if (shouldCallLiar) {
     // CPU calls liar (if possible)
@@ -649,16 +671,7 @@ void _endMatch() {
     });
     
     // Show indicator based on number of cards played
-    _showCpuPlayIndicator(cardsToPlay.length, false);
-    
-    // Announce what the CPU did
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('CPU played ${cardsToPlay.length} card${cardsToPlay.length > 1 ? 's' : ''}'),
-        backgroundColor: Colors.brown,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    _showCpuPlayIndicator(cardsToPlay.length, false);    
     
     // Check if CPU needs cards after playing
     if (_player2Cards.isEmpty) {
