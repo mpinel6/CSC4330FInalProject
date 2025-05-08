@@ -116,4 +116,35 @@ void main() {
       expect(overlapEmpty, true);
     });
   });
+
+  test('dealCards is deterministic with same seed', () {
+    final deck = List<String>.generate(20, (i) => 'C$i');
+
+    // Two fresh RNGs with the same seed:
+    final rng1 = Random(42);
+    final rng2 = Random(42);
+
+    final r1 = GameLogic.dealCards(
+      deck,
+      hasSecondPlayer: true,
+      random: rng1,
+    );
+    final r2 = GameLogic.dealCards(
+      deck,
+      hasSecondPlayer: true,
+      random: rng2,
+    );
+
+    expect(r1.player1, equals(r2.player1));
+    expect(r1.player2, equals(r2.player2));
+    expect(r1.remainingDeck, equals(r2.remainingDeck));
+  });
+
+  test('dealCards does not mutate the input deck', () {
+    final original = ['A','B','C','D','E','F','G','H','I','J'];
+    final copy = List<String>.from(original);
+    GameLogic.dealCards(original, hasSecondPlayer: true, random: Random(0));
+    expect(original, copy);
+  });
+
 }
