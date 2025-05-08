@@ -33,7 +33,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
-  
   int _selectedIndex = 0;
   bool _hasDealt = false;
   bool _hasSecondPlayer = true;
@@ -88,9 +87,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   ];
 
   final List<String> _topCards = ['Ace', 'King', 'Queen'];
-    int maxCards3() {
+  int maxCards3() {
     return _cardSelections.values.where((selected) => selected).length;
-  } 
+  }
 
   // Define text styles
   static const TextStyle _titleStyle = TextStyle(
@@ -277,87 +276,87 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   void _dealCards() {
-  int requiredLength = 5; // one player 5 cards
-  if (_hasSecondPlayer) {
-    requiredLength = 10; // 2 players 10
-  }
-  if (_deck.length >= requiredLength) {
-    final random = Random();
-    _deck.shuffle(random);
-    setState(() {
-      // the rng mechanic for the roulette
-      _player1UsedNumbers = [];
-      _player2UsedNumbers = [];
-      // each player has a random number that is defined at dealing that will be the reason they lose - token taken out
-      _player1LuckyNumber = random.nextInt(6) + 1;
-      _player2LuckyNumber = random.nextInt(6) + 1;
+    int requiredLength = 5; // one player 5 cards
+    if (_hasSecondPlayer) {
+      requiredLength = 10; // 2 players 10
+    }
+    if (_deck.length >= requiredLength) {
+      final random = Random();
+      _deck.shuffle(random);
+      setState(() {
+        // the rng mechanic for the roulette
+        _player1UsedNumbers = [];
+        _player2UsedNumbers = [];
+        // each player has a random number that is defined at dealing that will be the reason they lose - token taken out
+        _player1LuckyNumber = random.nextInt(6) + 1;
+        _player2LuckyNumber = random.nextInt(6) + 1;
 
-      // Reset tokens for both players at the start of each round
-      _player1Tokens = 3;
-      _player2Tokens = 3;
+        // Reset tokens for both players at the start of each round
+        _player1Tokens = 3;
+        _player2Tokens = 3;
 
-      // send out cards
-      _selectedCards = _deck.take(5).toList().asMap().entries.map((entry) {
-        return {
-          'id': entry.key,
-          'value': entry.value,
-        };
-      }).toList();
-
-      // send out cards to second player
-      if (_hasSecondPlayer) {
-        _player2Cards =
-            _deck.skip(5).take(5).toList().asMap().entries.map((entry) {
+        // send out cards
+        _selectedCards = _deck.take(5).toList().asMap().entries.map((entry) {
           return {
-            'id': entry.key + 5,
+            'id': entry.key,
             'value': entry.value,
           };
         }).toList();
-        _deck.removeRange(0, 10);
-      } else {
-        _deck.removeRange(0, 5);
+
+        // send out cards to second player
+        if (_hasSecondPlayer) {
+          _player2Cards =
+              _deck.skip(5).take(5).toList().asMap().entries.map((entry) {
+            return {
+              'id': entry.key + 5,
+              'value': entry.value,
+            };
+          }).toList();
+          _deck.removeRange(0, 10);
+        } else {
+          _deck.removeRange(0, 5);
+        }
+
+        _hasDealt = true;
+        _topLeftCard = _topCards[random.nextInt(_topCards.length)];
+        _cardSelections = {
+          for (var card in _selectedCards) '${card['id']}': false
+        };
+        _player2CardSelections = {
+          for (var card in _player2Cards) '${card['id']}': false
+        };
+      });
+
+      // Trigger card animations
+      for (int i = 0; i < _selectedCards.length; i++) {
+        _cardControllers[i].reset();
+        Future.delayed(Duration(milliseconds: 150 * i), () {
+          _cardControllers[i].forward();
+        });
       }
 
-      _hasDealt = true;
-      _topLeftCard = _topCards[random.nextInt(_topCards.length)];
-      _cardSelections = {
-        for (var card in _selectedCards) '${card['id']}': false
-      };
-      _player2CardSelections = {
-        for (var card in _player2Cards) '${card['id']}': false
-      };
-    });
+      // Show round indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Round $_currentRound of 3'),
+          backgroundColor: Colors.brown[700],
+          duration: const Duration(seconds: 2),
+        ),
+      );
 
-    // Trigger card animations
-    for (int i = 0; i < _selectedCards.length; i++) {
-      _cardControllers[i].reset();
-      Future.delayed(Duration(milliseconds: 150 * i), () {
-        _cardControllers[i].forward();
+      // Show play indicator after a short delay
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        _showPlayIndicator();
       });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Not enough cards left to deal!'),
+          backgroundColor: Colors.brown,
+        ),
+      );
     }
-
-    // Show round indicator
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Round $_currentRound of 3'),
-        backgroundColor: Colors.brown[700],
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    // Show play indicator after a short delay
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      _showPlayIndicator();
-    });
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Not enough cards left to deal!'),
-        backgroundColor: Colors.brown,
-      ),
-    );
   }
-}
 
   void _showPlayIndicator() {
     _playIndicatorController.reset();
@@ -381,320 +380,415 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   void _endRound() {
-  // Determine the winner of the current round
-  bool player1WinsRound = _player1Tokens > _player2Tokens;
-  
-  setState(() {
-    if (player1WinsRound) {
-      _player1RoundWins++;
-    } else {
-      _player2RoundWins++;
-    }
-    _isRoundOver = true;
-  });
-  
-  // Show round results dialog
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        backgroundColor: Colors.brown[100],
-        title: Text('Round $_currentRound Complete!'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              player1WinsRound ? 'You win this round!' : 'CPU wins this round!',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+    // Determine the winner of the current round
+    bool player1WinsRound = _player1Tokens > _player2Tokens;
+
+    setState(() {
+      if (player1WinsRound) {
+        _player1RoundWins++;
+      } else {
+        _player2RoundWins++;
+      }
+      _isRoundOver = true;
+    });
+
+    // Show round results dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.brown[50],
+          title: Center(
+            child: Text(
+              'Round $_currentRound Complete!',
+              style: TextStyle(
+                fontFamily: 'Zubilo',
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                shadows: [
+                  Shadow(offset: Offset(-2, -2), color: Colors.black),
+                  Shadow(offset: Offset(2, -2), color: Colors.black),
+                  Shadow(offset: Offset(-2, 2), color: Colors.black),
+                  Shadow(offset: Offset(2, 2), color: Colors.black),
+                  Shadow(offset: Offset(0, -2), color: Colors.black),
+                  Shadow(offset: Offset(0, 2), color: Colors.black),
+                  Shadow(offset: Offset(-2, 0), color: Colors.black),
+                  Shadow(offset: Offset(2, 0), color: Colors.black),
+                  Shadow(offset: Offset(-1, -1), color: Colors.black),
+                  Shadow(offset: Offset(1, -1), color: Colors.black),
+                  Shadow(offset: Offset(-1, 1), color: Colors.black),
+                  Shadow(offset: Offset(1, 1), color: Colors.black),
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
-            Text('Player tokens: $_player1Tokens'),
-            Text('CPU tokens: $_player2Tokens'),
-            const SizedBox(height: 10),
-            Text('Match score: $_player1RoundWins - $_player2RoundWins'),
-          ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Next Round'),
-            onPressed: () {
-              Navigator.of(context).pop();
-              _startNewRound();
-            },
           ),
-        ],
-      );
-    },
-  );
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                player1WinsRound
+                    ? 'You win this round!'
+                    : 'CPU wins this round!',
+                style: const TextStyle(
+                    fontFamily: "Zubilo",
+                    fontSize: 20,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text('Player tokens: $_player1Tokens',
+                  style: const TextStyle(color: Colors.black)),
+              Text('CPU tokens: $_player2Tokens'),
+              const SizedBox(height: 10),
+              Text('Match score: $_player1RoundWins - $_player2RoundWins'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text(
+                'Next Round',
+                style: TextStyle(
+                  fontFamily: 'Zubilo',
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(offset: Offset(-2, -2), color: Colors.black),
+                    Shadow(offset: Offset(2, -2), color: Colors.black),
+                    Shadow(offset: Offset(-2, 2), color: Colors.black),
+                    Shadow(offset: Offset(2, 2), color: Colors.black),
+                    Shadow(offset: Offset(0, -2), color: Colors.black),
+                    Shadow(offset: Offset(0, 2), color: Colors.black),
+                    Shadow(offset: Offset(-2, 0), color: Colors.black),
+                    Shadow(offset: Offset(2, 0), color: Colors.black),
+                    Shadow(offset: Offset(-1, -1), color: Colors.black),
+                    Shadow(offset: Offset(1, -1), color: Colors.black),
+                    Shadow(offset: Offset(-1, 1), color: Colors.black),
+                    Shadow(offset: Offset(1, 1), color: Colors.black),
+                  ],
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _startNewRound();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _startNewRound() {
-  // Check if the match is over (best of 3)
-  if (_player1RoundWins >= 2 || _player2RoundWins >= 2 || _currentRound >= 3) {
-    _endMatch();
-    return;
-  }
-  
-  final random = Random();
-  
-  setState(() {
-    // Increment round counter
-    _currentRound++;
-    
-    // Reset round-specific state
-    _hasDealt = false;
-    _isPlayer1Turn = true;
-    _hasPressedLiar = false;
-    _isPlayerCallingLiar = false;
-    _lastPlayedCards = [];
-    _selectedCards = [];
-    _player2Cards = [];
-    _cardSelections = {};
-    _player2CardSelections = {};
-    
-    // Reset tokens for both players
-    _player1Tokens = 3;
-    _player2Tokens = 3;
-    
-    // Reshuffle all cards back into deck
-    if (_discardPile.isNotEmpty) {
-      _deck.addAll(_discardPile);
-      _discardPile.clear();
-    }
-    
-    // Change the table card for the new round
-    _topLeftCard = _topCards[random.nextInt(_topCards.length)];
-    
-    // Reset round over flag
-    _isRoundOver = false;
-  });
-}
-
-void _endMatch() {
-  bool player1WinsMatch = _player1RoundWins > _player2RoundWins;
-  
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        backgroundColor: Colors.brown[100],
-        title: const Text('Match Complete!'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              player1WinsMatch 
-                ? 'Congratulations! You win the match!'
-                : 'CPU wins the match!',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            const SizedBox(height: 10),
-            Text('Final score: $_player1RoundWins - $_player2RoundWins'),
-          ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Play Again'),
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const Gamevsai()),
-              );
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
-
-  void _cpuTurn() {
-  // First check if CPU needs cards
-  if (_player2Cards.isEmpty) {
-    // Check if we need to reshuffle first
-    if (_deck.isEmpty && _discardPile.isNotEmpty) {
-      _reshuffleDiscardPile();
-    }
-    
-    // Try to replenish CPU's cards after potential reshuffle
-    _replenishCpuCards();
-    
-    // If still empty after replenishment attempt, pass turn
-    if (_player2Cards.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('CPU has no cards and no more cards available! Passing turn.'),
-          backgroundColor: Colors.brown,
-        ),
-      );
-      setState(() {
-        _isPlayer1Turn = true;
-      });
+    // Check if the match is over (best of 3)
+    if (_player1RoundWins >= 2 ||
+        _player2RoundWins >= 2 ||
+        _currentRound >= 3) {
+      _endMatch();
       return;
     }
-  }
 
-  // Now that we've handled card replenishment, proceed with normal CPU turn
-  final random = Random();
-  
-  // IMPROVED: AI decision making - 30% chance to call liar if possible
-  bool shouldCallLiar = false;
-if (_lastPlayedCards.isNotEmpty) {
-  // Base probability - increased from 30% to 40%
-  double callLiarProbability = 0.4;
-  
-  // Adjust probability based on number of cards played (more cards = higher chance of bluff)
-  if (_lastPlayedCards.length > 1) {
-    callLiarProbability += 0.15 * (_lastPlayedCards.length - 1);
-  }
-  
-  // Adjust probability based on player's remaining cards (few cards = desperate moves)
-  if (_selectedCards.length <= 2) {
-    callLiarProbability += 0.2;
-  }
-  
-  // Make more aggressive calls when CPU has few tokens left (nothing to lose)
-  if (_player2Tokens == 1) {
-    callLiarProbability += 0.15;
-  }
-  
-  // Final decision
-  shouldCallLiar = random.nextDouble() < callLiarProbability;
-}
-  
-  if (shouldCallLiar) {
-    // CPU calls liar (if possible)
+    final random = Random();
+
     setState(() {
-      _hasPressedLiar = true;
-      _isPlayerCallingLiar = false; // CPU is calling liar, not the player
-    });
-    
-    // Check if all cards match the top card or are jokers
-    bool allCardsMatch = _lastPlayedCards.every((card) =>
-        card['value'] == _topLeftCard || card['value'] == 'Joker');
-    
-    _showCpuPlayIndicator(0, true, allCardsMatch);
-    
-    // Update tokens and state after animation finishes
-    Future.delayed(const Duration(milliseconds: 4000), () {
-      setState(() {
-        if (allCardsMatch) {
-          // CPU was wrong - CPU loses a token
-          _player2Tokens -= 1;
-        } else {
-          // CPU was right - Player loses a token  
-          _player1Tokens -= 1;
-        }
-        _isPlayer1Turn = true;
-        
-        // Move the last played cards to discard pile after resolving liar call
-        for (var card in _lastPlayedCards) {
-          _discardPile.add(card['value']);
-        }
-        _lastPlayedCards = [];
-      });
-      
-      // Check if game is over
-      _checkGameOver();
-    });
-  } else {
-    // CPU plays cards
-    // IMPROVED: Find all matching cards (matching current type or jokers)
-    List<Map<String, dynamic>> matchingCards = _player2Cards
-        .where((card) => card['value'] == _topLeftCard || card['value'] == 'Joker')
-        .toList();
-    
-    // IMPROVED: Group cards by value to find duplicates
-    Map<String, List<Map<String, dynamic>>> cardsByValue = {};
-    for (var card in _player2Cards) {
-      if (!cardsByValue.containsKey(card['value'])) {
-        cardsByValue[card['value']] = [];
-      }
-      cardsByValue[card['value']]!.add(card);
-    }
-    
-    List<Map<String, dynamic>> cardsToPlay = [];
-    
-    // IMPROVED: Strategy based on hand composition
-    // Strategy 1: If we have matching cards, play them all (up to 3)
-    if (matchingCards.isNotEmpty) {
-      // Honest play with matching cards (max 3)
-      cardsToPlay = matchingCards.take(min(3, matchingCards.length)).toList();
-    }
-    // Strategy 2: Play multiple cards of the same type if we have them
-    else if (cardsByValue.values.any((cards) => cards.length > 1)) {
-      // Find the most common card type we have
-      String mostCommonType = '';
-      int maxCount = 0;
-      cardsByValue.forEach((type, cards) {
-        if (cards.length > maxCount) {
-          maxCount = cards.length;
-          mostCommonType = type;
-        }
-      });
-      
-      // Play up to 3 of the most common card
-      cardsToPlay = cardsByValue[mostCommonType]!.take(min(3, maxCount)).toList();
-      
-      // 70% chance to bluff that these are the required type
-      bool shouldBluff = random.nextDouble() < 0.7;
-      if (!shouldBluff) {
-        // Play honestly (just one card)
-        cardsToPlay = [cardsToPlay.first];
-      }
-    } 
-    // Strategy 3: Conservative play - just one random card
-    else {
-      cardsToPlay = [_player2Cards[random.nextInt(_player2Cards.length)]];
-    }
-    
-    // Play the selected cards
-    setState(() {
-      _lastPlayedCards = cardsToPlay;
-      
-      // Add played cards to discard pile
-      for (var card in cardsToPlay) {
-        _discardPile.add(card['value']);
-        // Remove from CPU's hand
-        _player2Cards.remove(card);
-      }
-      
-      _player2CardSelections.clear();
+      // Increment round counter
+      _currentRound++;
+
+      // Reset round-specific state
+      _hasDealt = false;
       _isPlayer1Turn = true;
       _hasPressedLiar = false;
       _isPlayerCallingLiar = false;
+      _lastPlayedCards = [];
+      _selectedCards = [];
+      _player2Cards = [];
+      _cardSelections = {};
+      _player2CardSelections = {};
+
+      // Reset tokens for both players
+      _player1Tokens = 3;
+      _player2Tokens = 3;
+
+      // Reshuffle all cards back into deck
+      if (_discardPile.isNotEmpty) {
+        _deck.addAll(_discardPile);
+        _discardPile.clear();
+      }
+
+      // Change the table card for the new round
+      _topLeftCard = _topCards[random.nextInt(_topCards.length)];
+
+      // Reset round over flag
+      _isRoundOver = false;
     });
-    
-    // Show indicator based on number of cards played
-    _showCpuPlayIndicator(cardsToPlay.length, false);    
-    
-    // Check if CPU needs cards after playing
+  }
+
+  void _endMatch() {
+    bool player1WinsMatch = _player1RoundWins > _player2RoundWins;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.brown[50],
+          title: const Text(
+            'Match Complete!',
+            style: TextStyle(
+              fontFamily: 'Zubilo',
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              shadows: [
+                Shadow(offset: Offset(-2, -2), color: Colors.black),
+                Shadow(offset: Offset(2, -2), color: Colors.black),
+                Shadow(offset: Offset(-2, 2), color: Colors.black),
+                Shadow(offset: Offset(2, 2), color: Colors.black),
+                Shadow(offset: Offset(0, -2), color: Colors.black),
+                Shadow(offset: Offset(0, 2), color: Colors.black),
+                Shadow(offset: Offset(-2, 0), color: Colors.black),
+                Shadow(offset: Offset(2, 0), color: Colors.black),
+                Shadow(offset: Offset(-1, -1), color: Colors.black),
+                Shadow(offset: Offset(1, -1), color: Colors.black),
+                Shadow(offset: Offset(-1, 1), color: Colors.black),
+                Shadow(offset: Offset(1, 1), color: Colors.black),
+              ],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                player1WinsMatch
+                    ? 'Congratulations! You win the match!'
+                    : 'CPU wins the match!',
+                style: const TextStyle(
+                    fontFamily: "Zubilo",
+                    fontSize: 20,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text('Final score: $_player1RoundWins - $_player2RoundWins'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text(
+                'Play Again',
+                style: TextStyle(
+                  fontFamily: 'Zubilo',
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(offset: Offset(-2, -2), color: Colors.black),
+                    Shadow(offset: Offset(2, -2), color: Colors.black),
+                    Shadow(offset: Offset(-2, 2), color: Colors.black),
+                    Shadow(offset: Offset(2, 2), color: Colors.black),
+                    Shadow(offset: Offset(0, -2), color: Colors.black),
+                    Shadow(offset: Offset(0, 2), color: Colors.black),
+                    Shadow(offset: Offset(-2, 0), color: Colors.black),
+                    Shadow(offset: Offset(2, 0), color: Colors.black),
+                    Shadow(offset: Offset(-1, -1), color: Colors.black),
+                    Shadow(offset: Offset(1, -1), color: Colors.black),
+                    Shadow(offset: Offset(-1, 1), color: Colors.black),
+                    Shadow(offset: Offset(1, 1), color: Colors.black),
+                  ],
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Gamevsai()),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _cpuTurn() {
+    // First check if CPU needs cards
     if (_player2Cards.isEmpty) {
-      Future.delayed(const Duration(milliseconds: 2000), () {
-        // Check if we need to reshuffle
-        if (_deck.isEmpty && _discardPile.isNotEmpty) {
-          _reshuffleDiscardPile();
+      // Check if we need to reshuffle first
+      if (_deck.isEmpty && _discardPile.isNotEmpty) {
+        _reshuffleDiscardPile();
+      }
+
+      // Try to replenish CPU's cards after potential reshuffle
+      _replenishCpuCards();
+
+      // If still empty after replenishment attempt, pass turn
+      if (_player2Cards.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'CPU has no cards and no more cards available! Passing turn.'),
+            backgroundColor: Colors.brown,
+          ),
+        );
+        setState(() {
+          _isPlayer1Turn = true;
+        });
+        return;
+      }
+    }
+
+    // Now that we've handled card replenishment, proceed with normal CPU turn
+    final random = Random();
+
+    // IMPROVED: AI decision making - 30% chance to call liar if possible
+    bool shouldCallLiar =
+        _lastPlayedCards.isNotEmpty && random.nextDouble() < 0.3;
+
+    if (shouldCallLiar) {
+      // CPU calls liar (if possible)
+      setState(() {
+        _hasPressedLiar = true;
+        _isPlayerCallingLiar = false; // CPU is calling liar, not the player
+      });
+
+      // Check if all cards match the top card or are jokers
+      bool allCardsMatch = _lastPlayedCards.every(
+          (card) => card['value'] == _topLeftCard || card['value'] == 'Joker');
+
+      _showCpuPlayIndicator(0, true, allCardsMatch);
+
+      // Update tokens and state after animation finishes
+      Future.delayed(const Duration(milliseconds: 4000), () {
+        setState(() {
+          if (allCardsMatch) {
+            // CPU was wrong - CPU loses a token
+            _player2Tokens -= 1;
+          } else {
+            // CPU was right - Player loses a token
+            _player1Tokens -= 1;
+          }
+          _isPlayer1Turn = true;
+
+          // Move the last played cards to discard pile after resolving liar call
+          for (var card in _lastPlayedCards) {
+            _discardPile.add(card['value']);
+          }
+          _lastPlayedCards = [];
+        });
+
+        // Check if game is over
+        _checkGameOver();
+      });
+    } else {
+      // CPU plays cards
+      // IMPROVED: Find all matching cards (matching current type or jokers)
+      List<Map<String, dynamic>> matchingCards = _player2Cards
+          .where((card) =>
+              card['value'] == _topLeftCard || card['value'] == 'Joker')
+          .toList();
+
+      // IMPROVED: Group cards by value to find duplicates
+      Map<String, List<Map<String, dynamic>>> cardsByValue = {};
+      for (var card in _player2Cards) {
+        if (!cardsByValue.containsKey(card['value'])) {
+          cardsByValue[card['value']] = [];
         }
-        
-        _replenishCpuCards();
+        cardsByValue[card['value']]!.add(card);
+      }
+
+      List<Map<String, dynamic>> cardsToPlay = [];
+
+      // IMPROVED: Strategy based on hand composition
+      // Strategy 1: If we have matching cards, play them all (up to 3)
+      if (matchingCards.isNotEmpty) {
+        // Honest play with matching cards (max 3)
+        cardsToPlay = matchingCards.take(min(3, matchingCards.length)).toList();
+      }
+      // Strategy 2: Play multiple cards of the same type if we have them
+      else if (cardsByValue.values.any((cards) => cards.length > 1)) {
+        // Find the most common card type we have
+        String mostCommonType = '';
+        int maxCount = 0;
+        cardsByValue.forEach((type, cards) {
+          if (cards.length > maxCount) {
+            maxCount = cards.length;
+            mostCommonType = type;
+          }
+        });
+
+        // Play up to 3 of the most common card
+        cardsToPlay =
+            cardsByValue[mostCommonType]!.take(min(3, maxCount)).toList();
+
+        // 70% chance to bluff that these are the required type
+        bool shouldBluff = random.nextDouble() < 0.7;
+        if (!shouldBluff) {
+          // Play honestly (just one card)
+          cardsToPlay = [cardsToPlay.first];
+        }
+      }
+      // Strategy 3: Conservative play - just one random card
+      else {
+        cardsToPlay = [_player2Cards[random.nextInt(_player2Cards.length)]];
+      }
+
+      // Play the selected cards
+      setState(() {
+        _lastPlayedCards = cardsToPlay;
+
+        // Add played cards to discard pile
+        for (var card in cardsToPlay) {
+          _discardPile.add(card['value']);
+          // Remove from CPU's hand
+          _player2Cards.remove(card);
+        }
+
+        _player2CardSelections.clear();
+        _isPlayer1Turn = true;
+        _hasPressedLiar = false;
+        _isPlayerCallingLiar = false;
+      });
+
+      // Show indicator based on number of cards played
+      _showCpuPlayIndicator(cardsToPlay.length, false);
+
+      // Announce what the CPU did
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'CPU played ${cardsToPlay.length} card${cardsToPlay.length > 1 ? 's' : ''}'),
+          backgroundColor: Colors.brown,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Check if CPU needs cards after playing
+      if (_player2Cards.isEmpty) {
+        Future.delayed(const Duration(milliseconds: 2000), () {
+          // Check if we need to reshuffle
+          if (_deck.isEmpty && _discardPile.isNotEmpty) {
+            _reshuffleDiscardPile();
+          }
+
+          _replenishCpuCards();
+        });
+      }
+    }
+  }
+
+  void _checkGameOver() {
+    if (_player1Tokens <= 0 || _player2Tokens <= 0) {
+      // End the round when a player runs out of tokens
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        _endRound();
       });
     }
   }
-}
-
-  void _checkGameOver() {
-  if (_player1Tokens <= 0 || _player2Tokens <= 0) {
-    // End the round when a player runs out of tokens
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      _endRound();
-    });
-  }
-}
 
   void _playSelectedCards() {
     setState(() {
@@ -707,11 +801,12 @@ if (_lastPlayedCards.isNotEmpty) {
         _cardSelections.clear();
 
         for (var card in _lastPlayedCards) {
-        _discardPile.add(card['value']);
-      }
-      
-      _selectedCards.removeWhere((card) => _cardSelections['${card['id']}'] == true);
-      _cardSelections.clear();
+          _discardPile.add(card['value']);
+        }
+
+        _selectedCards
+            .removeWhere((card) => _cardSelections['${card['id']}'] == true);
+        _cardSelections.clear();
 
         // Check if player needs new cards
         if (_selectedCards.isEmpty) {
@@ -728,71 +823,74 @@ if (_lastPlayedCards.isNotEmpty) {
   }
 
   void _reshuffleDiscardPile() {
-  if (_discardPile.isNotEmpty) {
-    setState(() {
-      // Move all cards from discard pile back to the deck
-      _deck.addAll(_discardPile);
-      _discardPile.clear();
-      
-      // Shuffle the deck
-      final random = Random();
-      _deck.shuffle(random);
-    });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Discard pile reshuffled into the deck!'),
-        backgroundColor: Colors.brown,
-        duration: Duration(seconds: 2),
-      ),
-    );
+    if (_discardPile.isNotEmpty) {
+      setState(() {
+        // Move all cards from discard pile back to the deck
+        _deck.addAll(_discardPile);
+        _discardPile.clear();
+
+        // Shuffle the deck
+        final random = Random();
+        _deck.shuffle(random);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Discard pile reshuffled into the deck!'),
+          backgroundColor: Colors.brown,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
-}
 
   void _replenishPlayerCards() {
-  // First check if we need to reshuffle
-  if (_deck.isEmpty && _discardPile.isNotEmpty) {
-    _reshuffleDiscardPile();
-  }
-  
-  // If deck is still empty after potential reshuffle, show message and return
-  if (_deck.isEmpty) {
+    // First check if we need to reshuffle
+    if (_deck.isEmpty && _discardPile.isNotEmpty) {
+      _reshuffleDiscardPile();
+    }
+
+    // If deck is still empty after potential reshuffle, show message and return
+    if (_deck.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Deck and discard pile are empty! No cards available to draw.'),
+          backgroundColor: Colors.brown,
+        ),
+      );
+      return;
+    }
+
+    // Generate 5 new cards (or fewer if deck is low)
+    final cardsToAdd = min(5, _deck.length);
+
+    final random = Random();
+    List<Map<String, dynamic>> newCards = [];
+
+    for (int i = 0; i < cardsToAdd; i++) {
+      final cardIndex = random.nextInt(_deck.length);
+      newCards.add({
+        'id': 100 + i, // Use high IDs to avoid conflicts
+        'value': _deck[cardIndex],
+      });
+      _deck.removeAt(cardIndex);
+    }
+
+    setState(() {
+      _selectedCards = newCards;
+      _cardSelections = {
+        for (var card in _selectedCards) '${card['id']}': false
+      };
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Deck and discard pile are empty! No cards available to draw.'),
+      SnackBar(
+        content: Text('You drew $cardsToAdd new cards!'),
         backgroundColor: Colors.brown,
       ),
     );
-    return;
   }
-
-  // Generate 5 new cards (or fewer if deck is low)
-  final cardsToAdd = min(5, _deck.length);
-  
-  final random = Random();
-  List<Map<String, dynamic>> newCards = [];
-  
-  for (int i = 0; i < cardsToAdd; i++) {
-    final cardIndex = random.nextInt(_deck.length);
-    newCards.add({
-      'id': 100 + i, // Use high IDs to avoid conflicts
-      'value': _deck[cardIndex],
-    });
-    _deck.removeAt(cardIndex);
-  }
-  
-  setState(() {
-    _selectedCards = newCards;
-    _cardSelections = {for (var card in _selectedCards) '${card['id']}': false};
-  });
-  
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text('You drew $cardsToAdd new cards!'),
-      backgroundColor: Colors.brown,
-    ),
-  );
-}
 
   void _replenishCpuCards() {
     if (_deck.isEmpty) {
@@ -807,10 +905,10 @@ if (_lastPlayedCards.isNotEmpty) {
 
     // Generate 5 new cards (or fewer if deck is low)
     final cardsToAdd = min(5, _deck.length);
-    
+
     final random = Random();
     List<Map<String, dynamic>> newCards = [];
-    
+
     for (int i = 0; i < cardsToAdd; i++) {
       final cardIndex = random.nextInt(_deck.length);
       newCards.add({
@@ -819,75 +917,77 @@ if (_lastPlayedCards.isNotEmpty) {
       });
       _deck.removeAt(cardIndex);
     }
-    
+
     setState(() {
       _player2Cards = newCards;
-      _player2CardSelections = {for (var card in _player2Cards) '${card['id']}': false};
+      _player2CardSelections = {
+        for (var card in _player2Cards) '${card['id']}': false
+      };
     });
   }
 
   void _checkLiar() {
-  if (_lastPlayedCards.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('No cards have been played yet!'),
-        backgroundColor: Colors.brown,
-      ),
-    );
-    return;
-  }
+    if (_lastPlayedCards.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No cards have been played yet!'),
+          backgroundColor: Colors.brown,
+        ),
+      );
+      return;
+    }
 
-  setState(() {
-    _hasPressedLiar = true;
-    _isPlayerCallingLiar = true; // Player is calling liar
-  });
-
-  // Check if all cards match the claimed card type or are jokers
-  bool allCardsMatch = _lastPlayedCards.every(
-      (card) => card['value'] == _topLeftCard || card['value'] == 'Joker');
-
-  // Show the liar animation
-  _showCpuPlayIndicator(0, true, allCardsMatch);
-
-  // Update tokens after animation
-  Future.delayed(const Duration(milliseconds: 4000), () {
     setState(() {
-      if (_isPlayerCallingLiar) {
-        // Player called liar
-        if (allCardsMatch) {
-          // Cards matched - player's call was wrong - player loses token
-          _player1Tokens -= 1;
-        } else {
-          // Cards didn't match - player's call was right - CPU loses token
-          _player2Tokens -= 1;
-        }
-      } else {
-        // CPU called liar
-        if (allCardsMatch) {
-          // Cards matched - CPU's call was wrong - CPU loses token
-          _player2Tokens -= 1;
-        } else {
-          // Cards didn't match - CPU's call was right - player loses token
-          _player1Tokens -= 1;
-        }
-      }
-      
-      // Add the played cards to discard pile
-      for (var card in _lastPlayedCards) {
-        _discardPile.add(card['value']);
-      }
-      
-      // Clear the last played cards
-      _lastPlayedCards = [];
-      
-      // Reset the liar caller state
-      _isPlayerCallingLiar = false;
+      _hasPressedLiar = true;
+      _isPlayerCallingLiar = true; // Player is calling liar
     });
-    
-    // Check if game is over due to token depletion
-    _checkGameOver();
-  });
-}
+
+    // Check if all cards match the claimed card type or are jokers
+    bool allCardsMatch = _lastPlayedCards.every(
+        (card) => card['value'] == _topLeftCard || card['value'] == 'Joker');
+
+    // Show the liar animation
+    _showCpuPlayIndicator(0, true, allCardsMatch);
+
+    // Update tokens after animation
+    Future.delayed(const Duration(milliseconds: 4000), () {
+      setState(() {
+        if (_isPlayerCallingLiar) {
+          // Player called liar
+          if (allCardsMatch) {
+            // Cards matched - player's call was wrong - player loses token
+            _player1Tokens -= 1;
+          } else {
+            // Cards didn't match - player's call was right - CPU loses token
+            _player2Tokens -= 1;
+          }
+        } else {
+          // CPU called liar
+          if (allCardsMatch) {
+            // Cards matched - CPU's call was wrong - CPU loses token
+            _player2Tokens -= 1;
+          } else {
+            // Cards didn't match - CPU's call was right - player loses token
+            _player1Tokens -= 1;
+          }
+        }
+
+        // Add the played cards to discard pile
+        for (var card in _lastPlayedCards) {
+          _discardPile.add(card['value']);
+        }
+
+        // Clear the last played cards
+        _lastPlayedCards = [];
+
+        // Reset the liar caller state
+        _isPlayerCallingLiar = false;
+      });
+
+      // Check if game is over due to token depletion
+      _checkGameOver();
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -1195,7 +1295,8 @@ if (_lastPlayedCards.isNotEmpty) {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 20),
                           child: IconButton(
-                            onPressed: maxCards3() > 3 ? null : _playSelectedCards,
+                            onPressed:
+                                maxCards3() > 3 ? null : _playSelectedCards,
                             icon: Image.asset(
                               'assets/images/thumbsup.png',
                               width: 40,
@@ -1558,7 +1659,7 @@ if (_lastPlayedCards.isNotEmpty) {
                                   padding:
                                       const EdgeInsets.symmetric(horizontal: 4),
                                   child: Image.asset(
-                                    'assets/images/${_lastPlayedCards.last['value'].toLowerCase()}.jpg' ,
+                                    'assets/images/${_lastPlayedCards.last['value'].toLowerCase()}.jpg',
                                     //assets/images/back.jpg
                                     width: 80,
                                     height: 120,
