@@ -937,10 +937,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       // Show indicator based on number of cards played
       _showCpuPlayIndicator(cardsToPlay.length, false);
 
-      // Announce what the CPU did
-      _showAnnouncement(
-          'CPU played ${cardsToPlay.length} card${cardsToPlay.length > 1 ? 's' : ''}');
-
       // Check if CPU needs cards after playing
       if (_player2Cards.isEmpty) {
         Future.delayed(const Duration(milliseconds: 2000), () {
