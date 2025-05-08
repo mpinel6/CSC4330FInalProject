@@ -6,6 +6,7 @@ import 'dart:math';
 import 'dart:async';
 import 'multiplayer.dart';
 import 'game_state_manager.dart';
+import 'package:flutter/services.dart';
 
 class LanCardGame extends StatefulWidget {
   final MultiplayerService multiplayerService;
@@ -163,6 +164,11 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
+
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     
     // Initialize GameStateManager for multiplayer
     _gameStateManager = GameStateManager(widget.multiplayerService);
@@ -264,6 +270,8 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
 
   void _setupAnimations() {
     // Initialize card animations
+
+
     _cardControllers = List.generate(
       5,
       (_) => AnimationController(
@@ -830,17 +838,21 @@ void _replenishPlayerCards(bool isHost) {
   List<String> updatedDeck = List<String>.from(_deck);
   List<String> updatedDiscardPile = List<String>.from(_discardPile);
   
+  // Use our dedicated method instead of duplicating logic
   if (updatedDeck.isEmpty && updatedDiscardPile.isNotEmpty) {
-    updatedDeck.addAll(updatedDiscardPile);
-    updatedDiscardPile.clear();
-    updatedDeck.shuffle(Random());
+    _reshuffleDiscardPile(); // Call the reshuffleDiscardPile method
+    
+    // Refresh our local copies after the reshuffle
+    updatedDeck = List<String>.from(_deck);
+    updatedDiscardPile = List<String>.from(_discardPile);
   }
   
   // If deck is still empty after potential reshuffle
   if (updatedDeck.isEmpty) {
     final message = 'No cards available to draw!';
     _gameStateManager.updateState({
-      'logMessage': message
+      'logMessage': message,
+      'replenishClient': false  // Clear the replenish flag to prevent infinite loop
     });
     return;
   }
@@ -876,6 +888,37 @@ void _replenishPlayerCards(bool isHost) {
       'deck': updatedDeck,
       'discardPile': updatedDiscardPile,
       'logMessage': 'Client drew $cardsToAdd new cards'
+    });
+  }
+}
+
+void _reshuffleDiscardPile() {
+  // Only the host should manage the deck
+  if (!widget.isHost) return;
+  
+  if (_discardPile.isNotEmpty) {
+    // Create local copies of the data to work with
+    List<String> updatedDeck = List<String>.from(_deck);
+    List<String> updatedDiscardPile = List<String>.from(_discardPile);
+    
+    // Move all cards from discard pile back to the deck
+    updatedDeck.addAll(updatedDiscardPile);
+    updatedDiscardPile.clear();
+    
+    // Shuffle the deck
+    final random = Random();
+    updatedDeck.shuffle(random);
+    
+    // Update game state via GameStateManager
+    _gameStateManager.updateState({
+      'deck': updatedDeck,
+      'discardPile': updatedDiscardPile,
+      'logMessage': 'Reshuffled discard pile into deck (${updatedDeck.length} cards total)'
+    });
+  } else {
+    // No cards to reshuffle - log this information
+    _gameStateManager.updateState({
+      'logMessage': 'No cards in discard pile to reshuffle'
     });
   }
 }
@@ -966,20 +1009,28 @@ void _checkGameOver() {
   }
 
   @override
-  void dispose() {
-    // Clean up controllers
-    _stateSubscription?.cancel();
-    for (var controller in _cardControllers) {
-      controller.dispose();
-    }
-    for (var controller in _cardLiftControllers.values) {
-      controller.dispose();
-    }
-    _playIndicatorController.dispose();
-    _topCardController.dispose();
-    _cpuPlayController.dispose();
-    super.dispose();
+void dispose() {
+  // Reset to allow all orientations when leaving this screen
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+  
+  // Clean up controllers
+  _stateSubscription?.cancel();
+  for (var controller in _cardControllers) {
+    controller.dispose();
   }
+  for (var controller in _cardLiftControllers.values) {
+    controller.dispose();
+  }
+  _playIndicatorController.dispose();
+  _topCardController.dispose();
+  _cpuPlayController.dispose();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
