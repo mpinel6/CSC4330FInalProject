@@ -1187,158 +1187,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     }
   }
 
-  void _testDialogs() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        // Calculate dynamic font sizes based on screen size
-        final screenWidth = MediaQuery.of(context).size.width;
-        final screenHeight = MediaQuery.of(context).size.height;
-
-        // Base sizes on the smaller dimension to ensure consistency
-        final baseSize = min(screenWidth, screenHeight);
-
-        // Calculate font sizes
-        final titleSize = baseSize * 0.06;
-        final buttonSize = baseSize * 0.045;
-
-        // Calculate dynamic spacing
-        final smallSpacing = screenHeight * 0.02;
-        final mediumSpacing = screenHeight * 0.04;
-        final largeSpacing = screenHeight * 0.06;
-
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: ScaleTransition(
-            scale: _dialogAnimation,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.8,
-              height: MediaQuery.of(context).size.height * 0.8,
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/wooduiupdatepanel.png'),
-                  fit: BoxFit.contain,
-                ),
-              ),
-              padding: EdgeInsets.all(screenWidth * 0.04),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(height: smallSpacing),
-                    Text(
-                      'Test Dialogs',
-                      style: TextStyle(
-                        fontFamily: 'Zubilo',
-                        fontSize: titleSize,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: const [
-                          Shadow(offset: Offset(-2, -2), color: Colors.black),
-                          Shadow(offset: Offset(2, -2), color: Colors.black),
-                          Shadow(offset: Offset(-2, 2), color: Colors.black),
-                          Shadow(offset: Offset(2, 2), color: Colors.black),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: largeSpacing),
-                    Container(
-                      width: screenWidth * 0.3,
-                      height: screenHeight * 0.1,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            spreadRadius: 2,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: TextButton(
-                        onPressed: () {
-                          _dialogController.reverse().then((_) {
-                            Navigator.pop(context);
-                            _endRound();
-                          });
-                        },
-                        child: Text(
-                          'Test Round Complete',
-                          style: TextStyle(
-                            fontFamily: 'Zubilo',
-                            fontSize: buttonSize,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            shadows: const [
-                              Shadow(
-                                  offset: Offset(-2, -2), color: Colors.black),
-                              Shadow(
-                                  offset: Offset(2, -2), color: Colors.black),
-                              Shadow(
-                                  offset: Offset(-2, 2), color: Colors.black),
-                              Shadow(offset: Offset(2, 2), color: Colors.black),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: mediumSpacing),
-                    Container(
-                      width: screenWidth * 0.3,
-                      height: screenHeight * 0.1,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            spreadRadius: 2,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: TextButton(
-                        onPressed: () {
-                          _dialogController.reverse().then((_) {
-                            Navigator.pop(context);
-                            _endMatch();
-                          });
-                        },
-                        child: Text(
-                          'Test Match Complete',
-                          style: TextStyle(
-                            fontFamily: 'Zubilo',
-                            fontSize: buttonSize,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            shadows: const [
-                              Shadow(
-                                  offset: Offset(-2, -2), color: Colors.black),
-                              Shadow(
-                                  offset: Offset(2, -2), color: Colors.black),
-                              Shadow(
-                                  offset: Offset(-2, 2), color: Colors.black),
-                              Shadow(offset: Offset(2, 2), color: Colors.black),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-    _dialogController.forward();
-  }
-
   @override
   Widget build(BuildContext context) {
     String liarbutton;
@@ -1553,32 +1401,17 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                               border: Border.all(color: Colors.white, width: 2),
                             ),
                             padding: const EdgeInsets.all(8),
-                            child: PopupMenuButton<String>(
+                            child: IconButton(
                               icon: Icon(
                                 _isNavBarVisible ? Icons.menu : Icons.menu_open,
                                 color: Colors.white,
                                 size: 32,
                               ),
-                              onSelected: (String result) {
-                                if (result == 'nav') {
-                                  setState(() {
-                                    _isNavBarVisible = !_isNavBarVisible;
-                                  });
-                                } else if (result == 'test') {
-                                  _testDialogs();
-                                }
+                              onPressed: () {
+                                setState(() {
+                                  _isNavBarVisible = !_isNavBarVisible;
+                                });
                               },
-                              itemBuilder: (BuildContext context) =>
-                                  <PopupMenuEntry<String>>[
-                                const PopupMenuItem<String>(
-                                  value: 'nav',
-                                  child: Text('Toggle Navigation Bar'),
-                                ),
-                                const PopupMenuItem<String>(
-                                  value: 'test',
-                                  child: Text('Test Dialogs'),
-                                ),
-                              ],
                             ),
                           ),
                         ],
