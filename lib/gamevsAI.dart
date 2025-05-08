@@ -58,6 +58,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   int _player2LuckyNumber = 0;
   List<int> _player1UsedNumbers = [];
   List<int> _player2UsedNumbers = [];
+  List<String> _discardPile = [];
+
   List<String> _deck = [
     'Ace',
     'Ace',
@@ -364,14 +366,19 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   void _cpuTurn() {
   // First check if CPU needs cards
   if (_player2Cards.isEmpty) {
-    // Try to replenish CPU's cards
+    // Check if we need to reshuffle first
+    if (_deck.isEmpty && _discardPile.isNotEmpty) {
+      _reshuffleDiscardPile();
+    }
+    
+    // Try to replenish CPU's cards after potential reshuffle
     _replenishCpuCards();
     
-    // If still empty after replenishment attempt (empty deck), pass turn
+    // If still empty after replenishment attempt, pass turn
     if (_player2Cards.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('CPU has no cards and deck is empty! Passing turn.'),
+          content: Text('CPU has no cards and no more cards available! Passing turn.'),
           backgroundColor: Colors.brown,
         ),
       );
@@ -383,84 +390,136 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   // Now that we've handled card replenishment, proceed with normal CPU turn
-  final randomMove = Random();
-  int moveChoice = randomMove.nextInt(2) + 1;
+  final random = Random();
   
-  // Pick a card to play - try to match the top card type if possible
-  var playCard = _player2Cards.first;
-  for (var card in _player2Cards) {
-    if (card['value'] == _topLeftCard || card['value'] == 'Joker') {
-      playCard = card;
-      break;
-    }
-  }
-
-  if (moveChoice == 2 || _lastPlayedCards.isEmpty) {
-    // CPU plays a card
+  // IMPROVED: AI decision making - 30% chance to call liar if possible
+  bool shouldCallLiar = _lastPlayedCards.isNotEmpty && random.nextDouble() < 0.3;
+  
+  if (shouldCallLiar) {
+    // CPU calls liar (if possible)
     setState(() {
-      _lastPlayedCards = [playCard];
-      _player2Cards.remove(playCard); // Use remove instead of removeAt(0) to remove the specific card
+      _hasPressedLiar = true;
+      _isPlayerCallingLiar = false; // CPU is calling liar, not the player
+    });
+    
+    // Check if all cards match the top card or are jokers
+    bool allCardsMatch = _lastPlayedCards.every((card) =>
+        card['value'] == _topLeftCard || card['value'] == 'Joker');
+    
+    _showCpuPlayIndicator(0, true, allCardsMatch);
+    
+    // Update tokens and state after animation finishes
+    Future.delayed(const Duration(milliseconds: 4000), () {
+      setState(() {
+        if (allCardsMatch) {
+          // CPU was wrong - CPU loses a token
+          _player2Tokens -= 1;
+        } else {
+          // CPU was right - Player loses a token  
+          _player1Tokens -= 1;
+        }
+        _isPlayer1Turn = true;
+        
+        // Move the last played cards to discard pile after resolving liar call
+        for (var card in _lastPlayedCards) {
+          _discardPile.add(card['value']);
+        }
+        _lastPlayedCards = [];
+      });
+      
+      // Check if game is over
+      _checkGameOver();
+    });
+  } else {
+    // CPU plays cards
+    // IMPROVED: Find all matching cards (matching current type or jokers)
+    List<Map<String, dynamic>> matchingCards = _player2Cards
+        .where((card) => card['value'] == _topLeftCard || card['value'] == 'Joker')
+        .toList();
+    
+    // IMPROVED: Group cards by value to find duplicates
+    Map<String, List<Map<String, dynamic>>> cardsByValue = {};
+    for (var card in _player2Cards) {
+      if (!cardsByValue.containsKey(card['value'])) {
+        cardsByValue[card['value']] = [];
+      }
+      cardsByValue[card['value']]!.add(card);
+    }
+    
+    List<Map<String, dynamic>> cardsToPlay = [];
+    
+    // IMPROVED: Strategy based on hand composition
+    // Strategy 1: If we have matching cards, play them all (up to 3)
+    if (matchingCards.isNotEmpty) {
+      // Honest play with matching cards (max 3)
+      cardsToPlay = matchingCards.take(min(3, matchingCards.length)).toList();
+    }
+    // Strategy 2: Play multiple cards of the same type if we have them
+    else if (cardsByValue.values.any((cards) => cards.length > 1)) {
+      // Find the most common card type we have
+      String mostCommonType = '';
+      int maxCount = 0;
+      cardsByValue.forEach((type, cards) {
+        if (cards.length > maxCount) {
+          maxCount = cards.length;
+          mostCommonType = type;
+        }
+      });
+      
+      // Play up to 3 of the most common card
+      cardsToPlay = cardsByValue[mostCommonType]!.take(min(3, maxCount)).toList();
+      
+      // 70% chance to bluff that these are the required type
+      bool shouldBluff = random.nextDouble() < 0.7;
+      if (!shouldBluff) {
+        // Play honestly (just one card)
+        cardsToPlay = [cardsToPlay.first];
+      }
+    } 
+    // Strategy 3: Conservative play - just one random card
+    else {
+      cardsToPlay = [_player2Cards[random.nextInt(_player2Cards.length)]];
+    }
+    
+    // Play the selected cards
+    setState(() {
+      _lastPlayedCards = cardsToPlay;
+      
+      // Add played cards to discard pile
+      for (var card in cardsToPlay) {
+        _discardPile.add(card['value']);
+        // Remove from CPU's hand
+        _player2Cards.remove(card);
+      }
+      
       _player2CardSelections.clear();
       _isPlayer1Turn = true;
       _hasPressedLiar = false;
       _isPlayerCallingLiar = false;
     });
-    _showCpuPlayIndicator(1, false);
+    
+    // Show indicator based on number of cards played
+    _showCpuPlayIndicator(cardsToPlay.length, false);
+    
+    // Announce what the CPU did
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('CPU played ${cardsToPlay.length} card${cardsToPlay.length > 1 ? 's' : ''}'),
+        backgroundColor: Colors.brown,
+        duration: const Duration(seconds: 2),
+      ),
+    );
     
     // Check if CPU needs cards after playing
     if (_player2Cards.isEmpty) {
       Future.delayed(const Duration(milliseconds: 2000), () {
+        // Check if we need to reshuffle
+        if (_deck.isEmpty && _discardPile.isNotEmpty) {
+          _reshuffleDiscardPile();
+        }
+        
         _replenishCpuCards();
       });
-    }
-  } else {
-    // CPU calls liar (if possible)
-    if (_lastPlayedCards.isNotEmpty) {
-      setState(() {
-        _hasPressedLiar = true;
-        _isPlayerCallingLiar = false; // CPU is calling liar, not the player
-      });
-      
-      // Check if all cards match the top card or are jokers
-      bool allCardsMatch = _lastPlayedCards.every((card) =>
-          card['value'] == _topLeftCard || card['value'] == 'Joker');
-      
-      _showCpuPlayIndicator(0, true, allCardsMatch);
-      
-      // Update tokens and state after animation finishes
-      Future.delayed(const Duration(milliseconds: 4000), () {
-        setState(() {
-          if (allCardsMatch) {
-            // CPU was wrong - CPU loses a token
-            _player2Tokens -= 1;
-          } else {
-            // CPU was right - Player loses a token  
-            _player1Tokens -= 1;
-          }
-          _isPlayer1Turn = true;
-        });
-        
-        // Check if game is over
-        _checkGameOver();
-      });
-    } else {
-      // Can't call liar if no cards have been played, so play a card instead
-      setState(() {
-        _lastPlayedCards = [playCard];
-        _player2Cards.remove(playCard);
-        _player2CardSelections.clear();
-        _isPlayer1Turn = true;
-        _hasPressedLiar = false;
-        _isPlayerCallingLiar = false;
-      });
-      _showCpuPlayIndicator(1, false);
-      
-      // Check if CPU needs cards after playing
-      if (_player2Cards.isEmpty) {
-        Future.delayed(const Duration(milliseconds: 2000), () {
-          _replenishCpuCards();
-        });
-      }
     }
   }
 }
@@ -508,6 +567,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             .removeWhere((card) => _cardSelections['${card['id']}'] == true);
         _cardSelections.clear();
 
+        for (var card in _lastPlayedCards) {
+        _discardPile.add(card['value']);
+      }
+      
+      _selectedCards.removeWhere((card) => _cardSelections['${card['id']}'] == true);
+      _cardSelections.clear();
+
         // Check if player needs new cards
         if (_selectedCards.isEmpty) {
           _replenishPlayerCards();
@@ -522,44 +588,72 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     });
   }
 
-  void _replenishPlayerCards() {
-    if (_deck.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Deck is empty! No cards available to draw.'),
-          backgroundColor: Colors.brown,
-        ),
-      );
-      return;
-    }
-
-    // Generate 5 new cards (or fewer if deck is low)
-    final cardsToAdd = min(5, _deck.length);
-    
-    final random = Random();
-    List<Map<String, dynamic>> newCards = [];
-    
-    for (int i = 0; i < cardsToAdd; i++) {
-      final cardIndex = random.nextInt(_deck.length);
-      newCards.add({
-        'id': 100 + i, // Use high IDs to avoid conflicts
-        'value': _deck[cardIndex],
-      });
-      _deck.removeAt(cardIndex);
-    }
-    
+  void _reshuffleDiscardPile() {
+  if (_discardPile.isNotEmpty) {
     setState(() {
-      _selectedCards = newCards;
-      _cardSelections = {for (var card in _selectedCards) '${card['id']}': false};
+      // Move all cards from discard pile back to the deck
+      _deck.addAll(_discardPile);
+      _discardPile.clear();
+      
+      // Shuffle the deck
+      final random = Random();
+      _deck.shuffle(random);
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('You drew $cardsToAdd new cards!'),
+      const SnackBar(
+        content: Text('Discard pile reshuffled into the deck!'),
         backgroundColor: Colors.brown,
+        duration: Duration(seconds: 2),
       ),
     );
   }
+}
+
+  void _replenishPlayerCards() {
+  // First check if we need to reshuffle
+  if (_deck.isEmpty && _discardPile.isNotEmpty) {
+    _reshuffleDiscardPile();
+  }
+  
+  // If deck is still empty after potential reshuffle, show message and return
+  if (_deck.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Deck and discard pile are empty! No cards available to draw.'),
+        backgroundColor: Colors.brown,
+      ),
+    );
+    return;
+  }
+
+  // Generate 5 new cards (or fewer if deck is low)
+  final cardsToAdd = min(5, _deck.length);
+  
+  final random = Random();
+  List<Map<String, dynamic>> newCards = [];
+  
+  for (int i = 0; i < cardsToAdd; i++) {
+    final cardIndex = random.nextInt(_deck.length);
+    newCards.add({
+      'id': 100 + i, // Use high IDs to avoid conflicts
+      'value': _deck[cardIndex],
+    });
+    _deck.removeAt(cardIndex);
+  }
+  
+  setState(() {
+    _selectedCards = newCards;
+    _cardSelections = {for (var card in _selectedCards) '${card['id']}': false};
+  });
+  
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('You drew $cardsToAdd new cards!'),
+      backgroundColor: Colors.brown,
+    ),
+  );
+}
 
   void _replenishCpuCards() {
     if (_deck.isEmpty) {
@@ -638,6 +732,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           _player1Tokens -= 1;
         }
       }
+      
+      // Add the played cards to discard pile
+      for (var card in _lastPlayedCards) {
+        _discardPile.add(card['value']);
+      }
+      
+      // Clear the last played cards
+      _lastPlayedCards = [];
       
       // Reset the liar caller state
       _isPlayerCallingLiar = false;
