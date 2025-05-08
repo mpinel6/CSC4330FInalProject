@@ -162,13 +162,6 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
           const SizedBox(height: 20),
-          _buildButton('QuickStartTest', () {
-            AudioManager().stopMusic();
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const mattgamecoding()));
-          }),
           const SizedBox(height: 40),
         ],
       ),
