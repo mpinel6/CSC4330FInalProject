@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'settings.dart';
 
 class CreditsPage extends StatelessWidget {
   const CreditsPage({super.key});
@@ -7,89 +6,138 @@ class CreditsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF6F4E37), 
+      backgroundColor: const Color.fromARGB(255, 161, 159, 159),
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: const Color.fromARGB(255, 49, 49, 49),
+        centerTitle: true,
         title: const Text(
           'Credits',
-          style: TextStyle(color: Colors.white),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Zubilo',
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            shadows: [
+              Shadow(offset: Offset(-2, -2), color: Colors.black),
+              Shadow(offset: Offset(2, -2), color: Colors.black),
+              Shadow(offset: Offset(-2, 2), color: Colors.black),
+              Shadow(offset: Offset(2, 2), color: Colors.black),
+              Shadow(offset: Offset(0, -2), color: Colors.black),
+              Shadow(offset: Offset(0, 2), color: Colors.black),
+              Shadow(offset: Offset(-2, 0), color: Colors.black),
+              Shadow(offset: Offset(2, 0), color: Colors.black),
+              Shadow(offset: Offset(-1, -1), color: Colors.black),
+              Shadow(offset: Offset(1, -1), color: Colors.black),
+              Shadow(offset: Offset(-1, 1), color: Colors.black),
+              Shadow(offset: Offset(1, 1), color: Colors.black),
+            ],
+          ),
         ),
-        backgroundColor: const Color(0xFF3E2723),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: const [
-            CreditCategory(
-              title: 'AI Design',
-              names: [
-                'Placeholder AI Designer 1',
-                'Placeholder AI Designer 2',
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _buildCreditSection(
+                  'Game Development',
+                  [
+                    'Lead Developer',
+                    'UI/UX Designer',
+                    'Game Designer',
+                  ],
+                ),
+                const SizedBox(height: 32),
+                _buildCreditSection(
+                  'Art & Graphics',
+                  [
+                    'Character Design',
+                    'Background Art',
+                    'UI Elements',
+                  ],
+                ),
+                const SizedBox(height: 32),
+                _buildCreditSection(
+                  'Sound & Music',
+                  [
+                    'Sound Effects',
+                    'Background Music',
+                    'Audio Engineering',
+                  ],
+                ),
+                const SizedBox(height: 32),
+                _buildCreditSection(
+                  'Special Thanks',
+                  [
+                    'Flutter Team',
+                    'Our Amazing Players',
+                    'Support Team',
+                  ],
+                ),
               ],
             ),
-            SizedBox(height: 20),
-            CreditCategory(
-              title: 'Multiplayer Design',
-              names: [
-                'Placeholder Multiplayer Designer 1',
-                'Placeholder Multiplayer Designer 2',
-              ],
-            ),
-            SizedBox(height: 20),
-            CreditCategory(
-              title: 'Game Design',
-              names: [
-                'Placeholder Game Designer 1',
-                'Placeholder Game Designer 2',
-              ],
-            ),
-            SizedBox(height: 20),
-            CreditCategory(
-              title: 'Graphic Art Design',
-              names: [
-                'Placeholder Graphic Artist 1',
-                'Placeholder Graphic Artist 2',
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
-}
 
-class CreditCategory extends StatelessWidget {
-  final String title;
-  final List<String> names;
-
-  const CreditCategory({
-    super.key,
-    required this.title,
-    required this.names,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.amber,
+  Widget _buildCreditSection(String title, List<String> roles) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 49, 49, 49),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            offset: Offset(0, 4),
+            blurRadius: 8,
           ),
-        ),
-        const SizedBox(height: 8),
-        ...names.map((name) => Text(
-              name,
-              style: const TextStyle(
-                fontSize: 18,
-                color: Colors.white,
-              ),
-            )),
-      ],
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontFamily: 'Zubilo',
+              fontSize: 28,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(offset: Offset(-1, -1), color: Colors.black),
+                Shadow(offset: Offset(1, -1), color: Colors.black),
+                Shadow(offset: Offset(-1, 1), color: Colors.black),
+                Shadow(offset: Offset(1, 1), color: Colors.black),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...roles.map((role) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  role,
+                  style: const TextStyle(
+                    fontFamily: 'Zubilo',
+                    fontSize: 20,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(offset: Offset(-1, -1), color: Colors.black),
+                      Shadow(offset: Offset(1, -1), color: Colors.black),
+                      Shadow(offset: Offset(-1, 1), color: Colors.black),
+                      Shadow(offset: Offset(1, 1), color: Colors.black),
+                    ],
+                  ),
+                ),
+              )),
+        ],
+      ),
     );
   }
 }

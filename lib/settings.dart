@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'rules_page.dart';
 import 'audio_manager.dart';
+import 'credits_page.dart';
 //import 'Credits_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -172,7 +173,10 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () {
-                // Navigator.pushNamed(context, '/credits');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CreditsPage()),
+                );
               },
               icon: const Icon(Icons.star, color: Colors.white),
               label: const Text(
