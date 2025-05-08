@@ -2,14 +2,19 @@ import 'dart:math';
 import 'game_context.dart';
 import 'player_memory.dart';
 
-/// AI logic for deciding moves in Liar's Deck game.
+/// AI logic for making decisions in the Liar's Deck game, such as playing cards or challenging claims.
 class LiarsDeckAI {
   final Random _rng;
   final PlayerMemory memory = PlayerMemory();
 
+  /// Constructs a new AI instance, optionally with a custom RNG (for testing).
   LiarsDeckAI({Random? rng}) : _rng = rng ?? Random();
 
-  /// Decides to either play or challenge based on the game context.
+  /// Determines the AI's next move based on the current [GameContext].
+  ///
+  /// Returns a map containing:
+  /// - `"action"`: either `"play"` or `"challenge"`
+  /// - `"count"`: number of cards to play (if playing)
   Map<String, dynamic> decidePlay(GameContext ctx) {
     final int maxClaim = min(3, ctx.hand.length);
     final int bestCount = _countMatchingCards(ctx.hand, ctx.tableCard);
@@ -39,7 +44,9 @@ class LiarsDeckAI {
     return playDecision;
   }
 
-  /// Determines whether the AI should challenge the last claim.
+  /// Evaluates whether to challenge the last claim based on memory and statistical analysis.
+  ///
+  /// Returns true if the AI should issue a challenge.
   bool _shouldChallenge(GameContext ctx) {
     if (ctx.lastClaimCount == 0 || ctx.lastPlayerId == null) return false;
 
@@ -63,7 +70,14 @@ class LiarsDeckAI {
     return likelihood < threshold.clamp(0.05, 0.9);
   }
 
-  /// Decides how many cards to play or if to bluff.
+  /// Calculates whether to bluff and how many cards to play.
+  ///
+  /// [hand] - the AI's current cards
+  /// [tableCard] - the card the AI must match or bluff
+  /// [round] - current game round
+  /// [maxClaim] - maximum number of cards that can be played
+  ///
+  /// Returns a map with `"action": "play"` and `"count"`: cards to claim.
   Map<String, dynamic> _decideCardPlay({
     required List<String> hand,
     required String tableCard,
@@ -85,15 +99,18 @@ class LiarsDeckAI {
     return {"action": "play", "count": count};
   }
 
-  /// Checks if a card matches the current table card.
+  /// Checks if a card is valid for play by matching the table card or being a Joker.
   bool _isMatch(String card, String tableCard) => card == tableCard || card == 'Joker';
 
-  /// Counts how many cards in hand match the table card.
+  /// Returns the number of cards in hand that match the table card.
   int _countMatchingCards(List<String> hand, String tableCard) {
     return hand.where((card) => _isMatch(card, tableCard)).length;
   }
 
-  /// Updates memory based on challenge outcome.
+  /// Records whether the AI's challenge was successful or not.
+  ///
+  /// [playerId] - the ID of the challenged player
+  /// [wasLie] - whether the challenged claim was a lie
   void recordChallengeOutcome(int playerId, bool wasLie) {
     if (wasLie) {
       memory.recordLie(playerId);
@@ -103,6 +120,6 @@ class LiarsDeckAI {
     memory.recordChallengeResult(playerId, wasLie);
   }
 
-  /// Clears all memory of the AI.
+  /// Clears all player and game memory stored by the AI.
   void resetMemory() => memory.resetMemory();
 }
