@@ -73,6 +73,9 @@ flutter:
     - assets/images/king.jpg
     - assets/images/queen.jpg
     - assets/images/back.jpg
+    - assets/images/Beer.png
+    - assets/images/Question.png
+    - assets/images/Settings.png
     - assets/images/backgroundimage.png
     - assets/images/middlesprite.png
     - assets/images/tableasset.png
