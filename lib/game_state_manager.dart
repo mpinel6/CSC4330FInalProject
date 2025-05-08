@@ -92,6 +92,16 @@ void _setUpMessageListener() {
             _broadcastState();
           }
 
+          else if (action == 'requestCards' && _multiplayerService.isHost) {
+            print('Host received request for new cards from client');
+            
+            // Call replenish function for client cards
+            _updateState({
+              'replenishClient': true  // Add flag to trigger replenishment
+            });
+            _broadcastState();
+          }
+
 
           else if (action == 'checkLiar' && _multiplayerService.isHost) {
             // Host processing client's liar call
@@ -249,5 +259,4 @@ void updateState(Map<String, dynamic> newState) {
   _updateState(newState);
   _broadcastState();
 }
-
 }
