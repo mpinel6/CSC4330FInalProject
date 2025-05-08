@@ -1,23 +1,21 @@
-import 'dart:math';
-
-/// Represents the current state of the game used by the AI to make a decision.
+/// Represents the current state of the game used by the AI to make decisions.
 class GameContext {
-  /// The cards currently held by the AI.
+  /// Cards currently held by the AI.
   final List<String> hand;
 
-  /// The top card on the table which the player must match or bluff.
+  /// The top card on the table that must be matched or bluffed.
   final String tableCard;
 
-  /// The number of cards claimed by the last player.
+  /// Number of cards claimed by the last player.
   final int lastClaimCount;
 
-  /// The ID of the last player who made a move.
+  /// ID of the last player who made a move (if any).
   final int? lastPlayerId;
 
-  /// Current round number of the game.
+  /// The current round number.
   final int roundNumber;
 
-  GameContext({
+  const GameContext({
     required this.hand,
     required this.tableCard,
     required this.lastClaimCount,
