@@ -5,6 +5,8 @@ import 'settings.dart';
 import 'matt_home_page.dart';
 import 'dart:math';
 import 'main.dart';
+import 'audio_manager.dart';
+import 'package:just_audio/just_audio.dart';
 
 class Gamevsai extends StatelessWidget {
   const Gamevsai({super.key});
@@ -34,6 +36,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
+  final AudioManager _audioManager = AudioManager();
+  final AudioPlayer _cardSoundPlayer = AudioPlayer();
+  final AudioPlayer _shuffleSoundPlayer = AudioPlayer();
   int _selectedIndex = 0;
   bool _hasDealt = false;
   bool _hasSecondPlayer = true;
@@ -185,6 +190,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
+    // Initialize sound effect players
+    _cardSoundPlayer.setAsset('assets/sound/card_down.mp3');
+    _shuffleSoundPlayer.setAsset('assets/sound/card_shuffle.mp3');
+
+    // Set initial volumes from AudioManager
+    _updateSoundEffectVolumes();
+
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
@@ -285,6 +297,18 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     ));
   }
 
+  void _updateSoundEffectVolumes() {
+    _cardSoundPlayer.setVolume(_audioManager.soundFxVolume);
+    _shuffleSoundPlayer.setVolume(_audioManager.soundFxVolume);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Update volumes when returning from settings
+    _updateSoundEffectVolumes();
+  }
+
   // Calculate the start position for each card based on its index
   Offset _getCardStartPosition(int index, int totalCards) {
     // Calculate the horizontal offset based on the card's final position
@@ -306,6 +330,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _cpuPlayController.dispose();
     _dialogController.dispose();
     _announcementController.dispose();
+    _cardSoundPlayer.dispose();
+    _shuffleSoundPlayer.dispose();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -313,6 +339,18 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       DeviceOrientation.landscapeRight,
     ]);
     super.dispose();
+  }
+
+  Future<void> _playCardSound() async {
+    _updateSoundEffectVolumes(); // Update volume before playing
+    await _cardSoundPlayer.seek(Duration.zero);
+    await _cardSoundPlayer.play();
+  }
+
+  Future<void> _playShuffleSound() async {
+    _updateSoundEffectVolumes(); // Update volume before playing
+    await _shuffleSoundPlayer.seek(Duration.zero);
+    await _shuffleSoundPlayer.play();
   }
 
   void _addSecondPlayer() {
@@ -329,6 +367,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     if (_deck.length >= requiredLength) {
       final random = Random();
       _deck.shuffle(random);
+      
+      // Play shuffle sound
+      _playShuffleSound();
+      
       setState(() {
         // the rng mechanic for the roulette
         _player1UsedNumbers = [];
@@ -372,6 +414,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           for (var card in _player2Cards) '${card['id']}': false
         };
       });
+
+      // Play card down sound 5 times with delay
+      for (int i = 0; i < 5; i++) {
+        Future.delayed(Duration(milliseconds: 150 * i), () {
+          _playCardSound();
+        });
+      }
 
       // Trigger card animations
       for (int i = 0; i < _selectedCards.length; i++) {
@@ -966,6 +1015,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         _lastPlayedCards = _selectedCards
             .where((card) => _cardSelections['${card['id']}'] == true)
             .toList();
+        
+        // Play card down sound for each card played
+        for (int i = 0; i < _lastPlayedCards.length; i++) {
+          Future.delayed(Duration(milliseconds: 150 * i), () {
+            _playCardSound();
+          });
+        }
+
         _selectedCards
             .removeWhere((card) => _cardSelections['${card['id']}'] == true);
         _cardSelections.clear();
@@ -973,10 +1030,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         for (var card in _lastPlayedCards) {
           _discardPile.add(card['value']);
         }
-
-        _selectedCards
-            .removeWhere((card) => _cardSelections['${card['id']}'] == true);
-        _cardSelections.clear();
 
         // Check if player needs new cards
         if (_selectedCards.isEmpty) {
@@ -1003,6 +1056,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         final random = Random();
         _deck.shuffle(random);
       });
+
+      // Play shuffle sound
+      _playShuffleSound();
 
       _showAnnouncement('Discard pile reshuffled into the deck!');
     }
@@ -1139,27 +1195,34 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       _selectedIndex = index;
     });
 
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-
     if (index == 0) {
-      // Home button index
+      // Home button index - allow portrait
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const MyApp()),
       );
     } else if (index == 1) {
-      // Rules button index
+      // Rules button index - keep landscape
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const RulesPage()),
       );
     } else if (index == 2) {
-      // Settings button index
+      // Settings button index - keep landscape
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const SettingsPage()),
@@ -1351,14 +1414,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                       offset: Offset(-2, -2),
                                       color: Colors.black),
                                   Shadow(
-                                      offset: Offset(2, -2),
-                                      color: Colors.black),
+                                      offset: Offset(2, -2), color: Colors.black),
                                   Shadow(
-                                      offset: Offset(-2, 2),
-                                      color: Colors.black),
+                                      offset: Offset(-2, 2), color: Colors.black),
                                   Shadow(
-                                      offset: Offset(2, 2),
-                                      color: Colors.black),
+                                      offset: Offset(2, 2), color: Colors.black),
                                 ],
                               ),
                             ),

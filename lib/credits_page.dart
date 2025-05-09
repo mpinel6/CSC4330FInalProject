@@ -45,38 +45,52 @@ class CreditsPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 _buildCreditSection(
+                  'LAN Development',
+                  [
+                    'Hunter Todd',
+                  ],
+                ),
+                const SizedBox(height: 32),
+                _buildCreditSection(
+                  'AI Development',
+                  [
+                    'Kollin Bassie',
+                    'Matthew Balachowski',
+                    'Christian Fullerton',
+                  ],
+                ),
+                const SizedBox(height: 32),
+                _buildCreditSection(
+                  'Sound',
+                  [
+                    'Jacob Rodrigue',
+                  ],
+                ),
+                const SizedBox(height: 32),
+                _buildCreditSection(
+                  'Digital Art & Graphics',
+                  [
+                    'Maycie Pinell',
+                    'Julia Everett',
+                  ],
+                ),
+                const SizedBox(height: 32),
+                _buildCreditSection(
                   'Game Development',
                   [
-                    'Lead Developer',
-                    'UI/UX Designer',
-                    'Game Designer',
-                  ],
-                ),
-                const SizedBox(height: 32),
-                _buildCreditSection(
-                  'Art & Graphics',
-                  [
-                    'Character Design',
-                    'Background Art',
-                    'UI Elements',
-                  ],
-                ),
-                const SizedBox(height: 32),
-                _buildCreditSection(
-                  'Sound & Music',
-                  [
-                    'Sound Effects',
-                    'Background Music',
-                    'Audio Engineering',
+                    'Steven Reed',
+                    'Ian Waskom',
+                    'Samuel Bustmante',
+                    'Colby Blank',
                   ],
                 ),
                 const SizedBox(height: 32),
                 _buildCreditSection(
                   'Special Thanks',
                   [
-                    'Flutter Team',
-                    'Our Amazing Players',
-                    'Support Team',
+                    'Professor Shepherd',
+                    'Monster Energy',
+                    'Mike The Tiger',
                   ],
                 ),
               ],

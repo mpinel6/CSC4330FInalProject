@@ -84,7 +84,9 @@ flutter:
     - assets/images/liarbutton.png
     - assets/images/Logo.png
     - assets/sound/BG_Music.mp3
-    - assets/sound/CardDownSfx.mp3
+    - assets/sound/card_down.mp3
+    - assets/sound/card_shuffle.mp3
+    
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
