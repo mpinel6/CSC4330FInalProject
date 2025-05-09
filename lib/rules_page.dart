@@ -270,7 +270,7 @@ class RulesContentState extends State<RulesContent> {
               key: _sectionKeys[0],
               title: "Game Overview",
               content:
-                  "Welcome to Joker's Joint, where bluffing is an art and deception pays! "
+                  "Welcome to Bobs's Joint, where bluffing is an art and deception pays! "
                   "In this retro-styled game of strategy and deceit, players take on the role of card sharks "
                   "trying to outwit each other through masterful bluffing and keen observation.\n\n"
                   "The objective is to be the last player standing by protecting your lives while "
