@@ -1,11 +1,14 @@
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 class AudioManager {
   static final AudioManager _instance = AudioManager._internal();
   final AudioPlayer _player = AudioPlayer();
   double _musicVolume = 0.5;
   double _soundFxVolume = 0.5;
+  bool _wasPlaying = false;
 
   factory AudioManager() {
     return _instance;
@@ -13,6 +16,25 @@ class AudioManager {
 
   AudioManager._internal() {
     _loadVolumeSettings();
+    _setupLifecycleListener();
+  }
+
+  void _setupLifecycleListener() {
+    SystemChannels.lifecycle.setMessageHandler((msg) async {
+      if (msg == AppLifecycleState.paused.toString()) {
+        // App went to background
+        _wasPlaying = _player.playing;
+        if (_wasPlaying) {
+          await _player.pause();
+        }
+      } else if (msg == AppLifecycleState.resumed.toString()) {
+        // App came to foreground
+        if (_wasPlaying) {
+          await _player.play();
+        }
+      }
+      return null;
+    });
   }
 
   Future<void> _loadVolumeSettings() async {
