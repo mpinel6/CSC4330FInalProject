@@ -186,6 +186,16 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
     print('Received game state update: $state');
     if (mounted) {
       setState(() {
+
+        // Handle game cancellation
+        if (state.containsKey('gameCancelled') && state['gameCancelled'] == true) {
+          print('Received game cancellation command');
+          
+          // If dialog isn't already showing, perform clean shutdown
+          if (!_isGameOverDialogShown) {
+            _performCleanShutdown();
+          }
+        }
         // Update token values from state first
         if (state.containsKey('player1Tokens')) {
           _player1Tokens = state['player1Tokens'];
@@ -1005,36 +1015,92 @@ void _showGameOverDialog(String winner) {
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Play Again'),
-              onPressed: () async {
-                try {
-                  // Cancel all streams first to prevent callbacks after navigation
-                  _stateSubscription?.cancel();
-                  
-                  // Send game end confirmation to clients
-                  if (widget.isHost) {
-                    widget.multiplayerService.sendGameCancelCommand();
-                  }
-                  
-                  // Navigate to home screen first to prevent any interface issues
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                  
-                  // Then reset the connection
-                  await widget.multiplayerService.resetConnection();
-                } catch (e) {
-                  print('Error in game over navigation: $e');
-                  // Force navigate to home screen in case of error
-                  if (mounted) {
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                  }
-                }
-              },
-            ),
+  child: const Text('Return to Menu'),
+  onPressed: () {
+    try {
+      // 1. Cancel subscription immediately to prevent callbacks
+      _stateSubscription?.cancel();
+      _stateSubscription = null;
+      
+      // 2. For host only, try to send cancel command
+      if (widget.isHost) {
+        try {
+          widget.multiplayerService.sendGameCancelCommand();
+        } catch (e) {
+          print('Error sending game cancel command: $e');
+        }
+      }
+      
+      // 3. Close the dialog and navigate back to home screen
+      Navigator.of(context).pop(); // Close dialog
+      Navigator.of(context).popUntil((route) => route.isFirst); // Return to main menu
+      
+      // 4. Reset connection in background after navigation completes
+      Future.delayed(const Duration(milliseconds: 300), () {
+        widget.multiplayerService.resetConnection().catchError((e) {
+          print('Error resetting connection: $e');
+        });
+      });
+    } catch (e) {
+      // In case of any errors, force navigation
+      print('Error during return to menu: $e');
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+  },
+),
           ],
         ),
       );
     },
   );
+}
+
+// New method to handle clean shutdown sequence
+void _performCleanShutdown() {
+  // 1. First detach state subscription to prevent callbacks during shutdown
+  _stateSubscription?.cancel();
+  _stateSubscription = null;
+  
+  // 2. If host, send shutdown command to client
+  if (widget.isHost) {
+    print('HOST: Sending game shutdown command');
+    widget.multiplayerService.sendGameCancelCommand();
+    
+    // Allow a short delay for the command to be sent
+    Future.delayed(Duration(milliseconds: 300), () {
+      // 3. Navigate back to home screen
+      if (mounted) {
+        print('HOST: Navigating to home screen');
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+      
+      // 4. Reset connections in background after navigation is complete
+      Future.delayed(Duration(milliseconds: 200), () {
+        widget.multiplayerService.resetConnection().then((_) {
+          print('HOST: Connection reset complete');
+        }).catchError((e) {
+          print('HOST: Error resetting connection: $e');
+        });
+      });
+    });
+  } else {
+    // CLIENT: Just navigate first, then reset connection
+    print('CLIENT: Preparing to navigate to home screen');
+    
+    // Navigate first
+    if (mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+    
+    // Reset connection in background after navigation completes
+    Future.delayed(Duration(milliseconds: 200), () {
+      widget.multiplayerService.resetConnection().then((_) {
+        print('CLIENT: Connection reset complete');
+      }).catchError((e) {
+        print('CLIENT: Error resetting connection: $e');
+      });
+    });
+  }
 }
 
 void _reshuffleDiscardPile() {

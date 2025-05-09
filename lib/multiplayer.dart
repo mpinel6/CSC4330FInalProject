@@ -500,35 +500,77 @@ Future<bool> resetConnection() async {
   }
 }
 
+// /// Sends a game cancellation notification to all connected clients
+// void sendGameCancelCommand() {
+//   final cancelCommand = {
+//     'type': 'game_state_update',  // CRITICAL CHANGE: Use game_state_update instead of game_canceled
+//     'data': {
+//       'gameCancelled': true,      // Add this flag to the game state
+//       'timestamp': DateTime.now().millisecondsSinceEpoch
+//     }
+//   };
+  
+//   // Add to game data stream for any local listeners
+//   _gameDataController.add(cancelCommand);
+  
+//   // Also broadcast using existing reliable method
+//   if (_isHost) {
+//     final jsonStr = jsonEncode(cancelCommand) + '\n';
+    
+//     // Send to all connected clients
+//     for (final client in _connectedClients) {
+//       try {
+//         client.write(jsonStr);
+//         // Send twice for reliability
+//         Future.delayed(Duration(milliseconds: 10), () {
+//           client.write(jsonStr);
+//         });
+//       } catch (e) {
+//         print('Error sending cancel command: $e');
+//       }
+//     }
+//   }
+// }
+
 /// Sends a game cancellation notification to all connected clients
 void sendGameCancelCommand() {
-  final cancelCommand = {
-    'type': 'game_state_update',  // CRITICAL CHANGE: Use game_state_update instead of game_canceled
-    'data': {
-      'gameCancelled': true,      // Add this flag to the game state
-      'timestamp': DateTime.now().millisecondsSinceEpoch
-    }
-  };
-  
-  // Add to game data stream for any local listeners
-  _gameDataController.add(cancelCommand);
-  
-  // Also broadcast using existing reliable method
-  if (_isHost) {
-    final jsonStr = jsonEncode(cancelCommand) + '\n';
+  try {
+    final cancelCommand = {
+      'type': 'game_state_update', 
+      'data': {
+        'gameCancelled': true,
+        'timestamp': DateTime.now().millisecondsSinceEpoch
+      }
+    };
     
-    // Send to all connected clients
-    for (final client in _connectedClients) {
-      try {
-        client.write(jsonStr);
-        // Send twice for reliability
-        Future.delayed(Duration(milliseconds: 10), () {
+    // Send to all connected clients (multiple times for reliability)
+    if (_isHost && _connectedClients.isNotEmpty) {
+      final jsonStr = jsonEncode(cancelCommand) + '\n';
+      
+      for (final client in _connectedClients) {
+        try {
+          // Send twice with delay for reliability
           client.write(jsonStr);
-        });
-      } catch (e) {
-        print('Error sending cancel command: $e');
+          
+          // Send again after short delay
+          Future.delayed(Duration(milliseconds: 50), () {
+            try {
+              client.write(jsonStr);
+            } catch (e) {
+              // Ignore errors on second attempt
+            }
+          });
+        } catch (e) {
+          print('Error sending cancel command: $e');
+        }
       }
     }
+    
+    // Add to local game data stream
+    _gameDataController.add(cancelCommand);
+    
+  } catch (e) {
+    print('Error in sendGameCancelCommand: $e');
   }
 }
 
