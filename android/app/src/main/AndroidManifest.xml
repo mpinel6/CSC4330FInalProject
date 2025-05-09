@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     
     <application
-        android:label="finalproj4330"
+        android:label="Jokers Joint"
         android:name="${applicationName}"
         android:largeHeap="true"
         android:icon="@mipmap/ic_launcher">
