@@ -45,6 +45,7 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
   int _player2RoundWins = 0;
   bool _isRoundOver = false;
   List<String> _discardPile = [];
+  bool _isGameOverDialogShown = false;
   
   // Game state properties
   // Add these with other state properties:
@@ -188,9 +189,11 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
         // Update token values from state first
         if (state.containsKey('player1Tokens')) {
           _player1Tokens = state['player1Tokens'];
+          print('Updated host tokens: $_player1Tokens');
         }
         if (state.containsKey('player2Tokens')) {
           _player2Tokens = state['player2Tokens'];
+          print('Updated client tokens: $_player2Tokens');
         }
 
         // Standard state updates
@@ -232,56 +235,46 @@ class _LanCardGameState extends State<LanCardGame> with TickerProviderStateMixin
           _replenishPlayerCards(false);
         }
         
-        // Update log with game state changes
+        // Update log with game state changes - CRITICAL for both devices
         final timestamp = DateTime.now().toString().substring(11, 19);
         if (state.containsKey('logMessage')) {
           gameLog.add('[$timestamp] ${state['logMessage']}');
           if (gameLog.length > 20) gameLog.removeAt(0);
         }
         
-        // CLIENT-SPECIFIC UI UPDATES
+        // SYNCHRONIZED UI UPDATES FOR BOTH HOST AND CLIENT
         
-        // 1. Trigger round end dialog for client when round is over
-        if (!widget.isHost && state.containsKey('isRoundOver') && state['isRoundOver'] == true) {
-          // Use future to avoid showing dialog during setState
-          Future.microtask(() {
-            if (mounted) _endRound();
-          });
-        }
-        
-        // 2. Handle liar result on client side
-        if (!widget.isHost && state.containsKey('hasPressedLiar') && !state['hasPressedLiar'] && _hasPressedLiar) {
-          // Get the result from token changes
-          bool hostLost = state.containsKey('player1Tokens') && 
-              state['player1Tokens'] < _player1Tokens;
-          bool clientLost = state.containsKey('player2Tokens') && 
-              state['player2Tokens'] < _player2Tokens;
-              
-          if (hostLost || clientLost) {
-            Future.microtask(() {
-              if (mounted) {
-                // Show animation with correct result (if all cards matched, host lost)
-                bool allCardsMatched = hostLost;
-                _showCpuPlayIndicator(0, true, allCardsMatched);
-              }
-            });
-          }
-        }
-        
-        // 3. Handle match end for client
-        if (!widget.isHost && 
-            ((_player1RoundWins >= 2 || _player2RoundWins >= 2) && _currentRound > 1)) {
+        // Liar result notification
+        if (state.containsKey('showLiarResult') && state['showLiarResult'] == true) {
+          bool allCardsMatch = state['liarCardCheck'] ?? false;
           Future.microtask(() {
             if (mounted) {
-              _showWinDialog(_player1RoundWins > _player2RoundWins ? 'Host' : 'Client');
+              _showCpuPlayIndicator(0, true, allCardsMatch);
             }
           });
         }
         
+        // Game over notification - FOR BOTH PLAYERS
+        // Update the game over handling in state listener:
+if (state.containsKey('isGameOver') && state['isGameOver'] == true) {
+  String winner = state['winner'] as String;
+  
+  // Prevent showing dialog multiple times
+  if (_isGameOverDialogShown) return;
+  _isGameOverDialogShown = true;
+  
+  // Add logging to confirm receipt on both devices
+  print('Received game over state: winner = $winner');
+  gameLog.add('GAME OVER - $winner wins!');
+  
+  // Show dialog immediately - no delay needed
+  _showGameOverDialog(winner);
+}
+        
         // Check for game over after token values are updated
-        if (state.containsKey('player1Tokens') || state.containsKey('player2Tokens')) {
+        if ((state.containsKey('player1Tokens') || state.containsKey('player2Tokens')) && widget.isHost) {
           Future.microtask(() {
-            if (mounted && widget.isHost) {
+            if (mounted) {
               _checkGameOver();
             }
           });
@@ -698,119 +691,123 @@ void _checkLiar() {
         'hasPressedLiar': false,
         'isPlayerCallingLiar': false,
         'lastPlayedCards': [],
-        'discardPile': updatedDiscardPile
+        'discardPile': updatedDiscardPile,
+        'showLiarResult': true,  // Add synchronization flag
+        'liarCardCheck': allCardsMatch  // Send result to both players
       };
         
       // Update tokens based on the result
       if (allCardsMatch) {
-  int newTokenCount = _player1Tokens - 1;
-  gameState['player1Tokens'] = _player1Tokens;
-  gameState['logMessage'] = 'Host called Liar incorrectly and lost a token. Host tokens: $_player1Tokens';
-} else {
-  int newTokenCount = _player2Tokens - 1;
-  gameState['player2Tokens'] = _player2Tokens;
-  gameState['logMessage'] = 'Host called Liar correctly! Client lost a token. Client tokens: $_player2Tokens';
-}
+        int newTokenCount = _player1Tokens - 1;
+        gameState['player1Tokens'] = newTokenCount;
+        gameState['logMessage'] = 'Host called Liar incorrectly and lost a token. Host tokens: $newTokenCount';
+      } else {
+        int newTokenCount = _player2Tokens - 1;
+        gameState['player2Tokens'] = newTokenCount;
+        gameState['logMessage'] = 'Host called Liar correctly! Client lost a token. Client tokens: $newTokenCount';
+      }
       
       _gameStateManager.updateState(gameState);
       
-      // Check for game over
+      // Check for game over immediately
       _checkGameOver();
-
     });
   } else {
     // Client implementation - send liar call to host
     widget.multiplayerService.sendGameAction('checkLiar', {});
-    
-  }
-}
-
-  void _endRound() {
-  bool player1WinsRound = _player1Tokens > _player2Tokens;
-  
-  // Update round wins counters
-  if (player1WinsRound) {
-    _player1RoundWins += 1;
-  } else {
-    _player2RoundWins += 1;
-  }
-  
-  // If host is ending the round, update the full game state for both players
-  if (widget.isHost) {
-    _gameStateManager.updateState({
-      'isRoundOver': true,
-      'player1RoundWins': _player1RoundWins,
-      'player2RoundWins': _player2RoundWins,
-      'player1Tokens': _player1Tokens,  // Ensure tokens are explicitly included
-      'player2Tokens': _player2Tokens,  // Ensure tokens are explicitly included
-      'logMessage': '${player1WinsRound ? "Host" : "Client"} wins round $_currentRound!'
+    setState(() {
+      _hasPressedLiar = true;
+      _isPlayerCallingLiar = true;
     });
   }
-
-  // Both host and client show the round end dialog
-  showDialog(
-    context: context,
-    barrierDismissible: false, // User must respond to dialog
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Center(
-          child: Text(
-            'Round $_currentRound Complete!',
-            style: TextStyle(
-              fontFamily: 'Zubilo',
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              shadows: [/* Your shadow implementation */],
-            ),
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.isHost 
-                ? (player1WinsRound ? 'You win this round!' : 'Client wins this round!')
-                : (player1WinsRound ? 'Host wins this round!' : 'You win this round!'),
-              style: const TextStyle(
-                fontFamily: "Zubilo",
-                fontSize: 20,
-                color: Colors.black,
-                fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Text('Host tokens: $_player1Tokens',
-                style: const TextStyle(color: Colors.black)),
-            Text('Client tokens: $_player2Tokens'),
-            const SizedBox(height: 10),
-            Text('Match score: $_player1RoundWins - $_player2RoundWins'),
-          ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Continue'),
-            onPressed: () {
-              Navigator.of(context).pop();
-              
-              // After dialog is closed, start new round or end match
-              if (_player1RoundWins >= 2 || _player2RoundWins >= 2 || _currentRound >= 3) {
-                Future.microtask(() {
-                  if (mounted) _endMatch();
-                });
-              } else {
-                // Only host should trigger new round
-                if (widget.isHost) {
-                  _startNewRound();
-                }
-              }
-            },
-          ),
-        ],
-      );
-    },
-  );
 }
+
+//   void _endRound() {
+//   bool player1WinsRound = _player1Tokens > _player2Tokens;
+  
+//   // Update round wins counters
+//   if (player1WinsRound) {
+//     _player1RoundWins += 1;
+//   } else {
+//     _player2RoundWins += 1;
+//   }
+  
+//   // If host is ending the round, update the full game state for both players
+//   if (widget.isHost) {
+//     _gameStateManager.updateState({
+//       'isRoundOver': true,
+//       'player1RoundWins': _player1RoundWins,
+//       'player2RoundWins': _player2RoundWins,
+//       'player1Tokens': _player1Tokens,  // Ensure tokens are explicitly included
+//       'player2Tokens': _player2Tokens,  // Ensure tokens are explicitly included
+//       'logMessage': '${player1WinsRound ? "Host" : "Client"} wins round $_currentRound!'
+//     });
+//   }
+
+//   // Both host and client show the round end dialog
+//   showDialog(
+//     context: context,
+//     barrierDismissible: false, // User must respond to dialog
+//     builder: (BuildContext context) {
+//       return AlertDialog(
+//         title: Center(
+//           child: Text(
+//             'Round $_currentRound Complete!',
+//             style: TextStyle(
+//               fontFamily: 'Zubilo',
+//               fontSize: 30,
+//               fontWeight: FontWeight.bold,
+//               color: Colors.white,
+//               shadows: [/* Your shadow implementation */],
+//             ),
+//           ),
+//         ),
+//         content: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             Text(
+//               widget.isHost 
+//                 ? (player1WinsRound ? 'You win this round!' : 'Client wins this round!')
+//                 : (player1WinsRound ? 'Host wins this round!' : 'You win this round!'),
+//               style: const TextStyle(
+//                 fontFamily: "Zubilo",
+//                 fontSize: 20,
+//                 color: Colors.black,
+//                 fontWeight: FontWeight.bold),
+//             ),
+//             const SizedBox(height: 10),
+//             Text('Host tokens: $_player1Tokens',
+//                 style: const TextStyle(color: Colors.black)),
+//             Text('Client tokens: $_player2Tokens'),
+//             const SizedBox(height: 10),
+//             Text('Match score: $_player1RoundWins - $_player2RoundWins'),
+//           ],
+//         ),
+//         actions: <Widget>[
+//           TextButton(
+//             child: const Text('Continue'),
+//             onPressed: () {
+//               Navigator.of(context).pop();
+              
+//               // After dialog is closed, start new round or end match
+//               if (_player1RoundWins >= 2 || _player2RoundWins >= 2 || _currentRound >= 3) {
+//                 Future.microtask(() {
+//                   if (mounted) _endMatch();
+//                 });
+//               } else {
+//                 // Only host should trigger new round
+//                 if (widget.isHost) {
+//                   _startNewRound();
+//                 }
+//               }
+//             },
+//           ),
+//         ],
+//       );
+//     },
+//   );
+// }
 
 void _startNewRound() {
   // Only the host should initiate a new round
@@ -818,7 +815,7 @@ void _startNewRound() {
   
   // Check if the match is over (best of 3)
   if (_player1RoundWins >= 2 || _player2RoundWins >= 2 || _currentRound >= 3) {
-    _endMatch();
+    //_endMatch();
     return;
   }
 
@@ -854,57 +851,57 @@ void _startNewRound() {
   _gameStateManager.updateState(gameState);
 }
 
-void _endMatch() {
-  bool player1WinsMatch = _player1RoundWins > _player2RoundWins;
+// void _endMatch() {
+//   bool player1WinsMatch = _player1RoundWins > _player2RoundWins;
   
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        backgroundColor: Colors.brown[50],
-        title: const Text(
-          'Match Complete!',
-          style: TextStyle(
-            fontFamily: 'Zubilo',
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            shadows: [/* shadows as in original */],
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.isHost
-                ? (player1WinsMatch ? 'You win the match!' : 'Client wins the match!')
-                : (player1WinsMatch ? 'Host wins the match!' : 'You win the match!'),
-              style: const TextStyle(
-                fontFamily: "Zubilo",
-                fontSize: 20,
-                color: Colors.black,
-                fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Text('Final score: $_player1RoundWins - $_player2RoundWins'),
-          ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Play Again'),
-            onPressed: () async {
-              await widget.multiplayerService.resetConnection();
-              Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pop(); // Return to menu
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
+//   showDialog(
+//     context: context,
+//     barrierDismissible: false,
+//     builder: (BuildContext context) {
+//       return AlertDialog(
+//         backgroundColor: Colors.brown[50],
+//         title: const Text(
+//           'Match Complete!',
+//           style: TextStyle(
+//             fontFamily: 'Zubilo',
+//             fontSize: 30,
+//             fontWeight: FontWeight.bold,
+//             color: Colors.white,
+//             shadows: [/* shadows as in original */],
+//           ),
+//         ),
+//         content: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             Text(
+//               widget.isHost
+//                 ? (player1WinsMatch ? 'You win the match!' : 'Client wins the match!')
+//                 : (player1WinsMatch ? 'Host wins the match!' : 'You win the match!'),
+//               style: const TextStyle(
+//                 fontFamily: "Zubilo",
+//                 fontSize: 20,
+//                 color: Colors.black,
+//                 fontWeight: FontWeight.bold),
+//             ),
+//             const SizedBox(height: 10),
+//             Text('Final score: $_player1RoundWins - $_player2RoundWins'),
+//           ],
+//         ),
+//         actions: <Widget>[
+//           TextButton(
+//             child: const Text('Play Again'),
+//             onPressed: () async {
+//               await widget.multiplayerService.resetConnection();
+//               Navigator.of(context).pop(); // Close dialog
+//               Navigator.of(context).pop(); // Return to menu
+//             },
+//           ),
+//         ],
+//       );
+//     },
+//   );
+// }
 
 void _replenishPlayerCards(bool isHost) {
   if (!widget.isHost) return; // Only host manages deck
@@ -959,6 +956,85 @@ void _replenishPlayerCards(bool isHost) {
       'replenishClient': false  // IMPORTANT: Reset flag to prevent infinite loop
     });
   }
+}
+
+void _showGameOverDialog(String winner) {
+  bool playerWon = (widget.isHost && winner == "Host") || (!widget.isHost && winner == "Client");
+  
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return WillPopScope(
+        onWillPop: () async => false, // Prevent back button closing dialog
+        child: AlertDialog(
+          backgroundColor: Colors.brown[50],
+          title: const Text(
+            'Game Over!',
+            style: TextStyle(
+              fontFamily: 'Zubilo',
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              shadows: [
+                Shadow(offset: Offset(-2, -2), color: Colors.black),
+                Shadow(offset: Offset(2, -2), color: Colors.black),
+                Shadow(offset: Offset(-2, 2), color: Colors.black),
+                Shadow(offset: Offset(2, 2), color: Colors.black),
+              ],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                playerWon ? 'You Win!' : 'You Lose!',
+                style: const TextStyle(
+                  fontFamily: "Zubilo",
+                  fontSize: 20,
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text('Host tokens: $_player1Tokens',
+                  style: const TextStyle(color: Colors.black)),
+              Text('Client tokens: $_player2Tokens',
+                  style: const TextStyle(color: Colors.black)),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Play Again'),
+              onPressed: () async {
+                try {
+                  // Cancel all streams first to prevent callbacks after navigation
+                  _stateSubscription?.cancel();
+                  
+                  // Send game end confirmation to clients
+                  if (widget.isHost) {
+                    widget.multiplayerService.sendGameCancelCommand();
+                  }
+                  
+                  // Navigate to home screen first to prevent any interface issues
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  
+                  // Then reset the connection
+                  await widget.multiplayerService.resetConnection();
+                } catch (e) {
+                  print('Error in game over navigation: $e');
+                  // Force navigate to home screen in case of error
+                  if (mounted) {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 void _reshuffleDiscardPile() {
@@ -1018,36 +1094,27 @@ void _reshuffleDiscardPile() {
 // }
 
 void _checkGameOver() {
-
   if (!widget.isHost) return; // Only host checks game over state
   
   // Debug logs to see actual token values
   print('Checking game over - P1 tokens: $_player1Tokens, P2 tokens: $_player2Tokens');
   
-  // Fix the condition to properly check if either player has 0 or fewer tokens
+  // End game when either player has 0 or fewer tokens
   if (_player1Tokens <= 0 || _player2Tokens <= 0) {
     gameLog.add('Game over triggered - P1: $_player1Tokens, P2: $_player2Tokens');
     
-    // End the round when a player runs out of tokens
-    // Use microtask to ensure this happens after the current frame is built
-    Future.microtask(() {
-      if (mounted) {
-        _endRound();
-      }
-    });
-  }
-  // Check if either player has won the match
-  if (_player1RoundWins >= 2 || _player2RoundWins >= 2) {
-    gameLog.add('Match over - P1: $_player1RoundWins, P2: $_player2RoundWins');
+    String winner = _player1Tokens <= 0 ? "Client" : "Host";
     
-    // Show the match result dialog
-    Future.microtask(() {
-      if (mounted) {
-        _showWinDialog(_player1RoundWins > _player2RoundWins ? 'Host' : 'Client');
-      }
+    // Add a unique timestamp to ensure both devices process this as a new state update
+    _gameStateManager.updateState({
+      'isGameOver': true,
+      'player1Tokens': _player1Tokens,
+      'player2Tokens': _player2Tokens,
+      'winner': winner,
+      'gameOverTimestamp': DateTime.now().millisecondsSinceEpoch,
+      'logMessage': 'Game ended - $winner wins!'
     });
   }
-
 }
 
   void _showWinDialog(String winner) {
@@ -1832,8 +1899,8 @@ Widget build(BuildContext context) {
                           const SizedBox(height: 20),
                           Text(
                             widget.isHost ? 
-                              'PLAYER 2 PLAYS ${_lastPlayedCards.length} CARD${_lastPlayedCards.length > 1 ? 'S' : ''}' :
-                              'PLAYER 1 PLAYS ${_lastPlayedCards.length} CARD${_lastPlayedCards.length > 1 ? 'S' : ''}',
+                              'PLAYS ${_lastPlayedCards.length} CARD${_lastPlayedCards.length > 1 ? 'S' : ''}' :
+                              'PLAYS ${_lastPlayedCards.length} CARD${_lastPlayedCards.length > 1 ? 'S' : ''}',
                             style: TextStyle(
                               fontFamily: 'Zubilo',
                               fontSize: 36,
