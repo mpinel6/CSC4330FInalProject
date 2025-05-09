@@ -104,51 +104,62 @@ void _setUpMessageListener() {
 
 
           else if (action == 'checkLiar' && _multiplayerService.isHost) {
-            // Host processing client's liar call
-            print('Host received liar call from client');
-            
-            // Get the current state and check if cards match
-            final lastPlayedCards = _currentState['lastPlayedCards'] ?? [];
-            final topLeftCard = _currentState['topLeftCard'];
-            
-            bool allCardsMatch = true;
-            for (final card in lastPlayedCards) {
-              final cardValue = card['value'];
-              if (cardValue != topLeftCard && cardValue != 'Joker') {
-                allCardsMatch = false;
-                break;
-              }
-            }
-            
-            // Update game state based on the result
-            final gameState = {
-              'hasPressedLiar': true,
-              'isPlayerCallingLiar': true,
-              'logMessage': 'Client called Liar!'
-            };
-            
-            _updateState(gameState);
-            _broadcastState();
-            
-            // After a delay, update tokens
-            Future.delayed(Duration(milliseconds: 4000), () {
-              final newState = Map<String, dynamic>.from(_currentState);
-              
-              if (allCardsMatch) {
-                // Client was wrong
-                newState['player2Tokens'] = (newState['player2Tokens'] ?? 3) - 1;
-                newState['logMessage'] = 'Client called Liar incorrectly and lost a token';
-              } else {
-                // Client was right
-                newState['player1Tokens'] = (newState['player1Tokens'] ?? 3) - 1;
-                newState['logMessage'] = 'Client called Liar correctly! Host lost a token';
-              }
-              
-              newState['isPlayerCallingLiar'] = false;
-              _updateState(newState);
-              _broadcastState();
-            });
-          }
+  // Host processing client's liar call
+  print('Host received liar call from client');
+  
+  // Get the current state and check if cards match
+  final lastPlayedCards = _currentState['lastPlayedCards'] ?? [];
+  final topLeftCard = _currentState['topLeftCard'];
+  
+  bool allCardsMatch = true;
+  for (final card in lastPlayedCards) {
+    final cardValue = card['value'];
+    if (cardValue != topLeftCard && cardValue != 'Joker') {
+      allCardsMatch = false;
+      break;
+    }
+  }
+  
+  // Update game state based on the result
+  final gameState = {
+    'hasPressedLiar': true,
+    'isPlayerCallingLiar': true,
+    'logMessage': 'Client called Liar!'
+  };
+  
+  _updateState(gameState);
+  _broadcastState();
+  
+  // After a delay, update tokens
+  Future.delayed(Duration(milliseconds: 4000), () {
+    final currentTokens = _currentState['player1Tokens'] ?? 3;
+    final clientTokens = _currentState['player2Tokens'] ?? 3;
+    
+    final newState = Map<String, dynamic>.from(_currentState);
+    newState['hasPressedLiar'] = false;
+    newState['isPlayerCallingLiar'] = false;
+    newState['lastPlayedCards'] = [];
+    
+    if (allCardsMatch) {
+      // Client was wrong
+      final newClientTokens = clientTokens - 1;
+      newState['player2Tokens'] = newClientTokens;
+      newState['logMessage'] = 'Client called Liar incorrectly and lost a token. Client tokens: $newClientTokens';
+      newState['showLiarResult'] = true;
+      newState['liarCardCheck'] = true;
+    } else {
+      // Client was right
+      final newHostTokens = currentTokens - 1;
+      newState['player1Tokens'] = newHostTokens;
+      newState['logMessage'] = 'Client called Liar correctly! Host lost a token. Host tokens: $newHostTokens';
+      newState['showLiarResult'] = true;
+      newState['liarCardCheck'] = false;
+    }
+    
+    _updateState(newState);
+    _broadcastState();
+  });
+}
         }
       } catch (e) {
         print('Error in GameStateManager: $e');
